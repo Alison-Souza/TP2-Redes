@@ -8,8 +8,8 @@ PROGRAM_NAME3 = exibidor
 OBJ1 = serv.o
 OBJ2 = emissor.o
 OBJ3 = exibidor.o
+PORT = 55000
 
-#all: $(PROGRAM_NAME)
 all:
 	$(CC) -c $(CFLAGS) serv.c
 	$(CC) -c $(CFLAGS) emissor.c
@@ -19,7 +19,7 @@ all:
 	$(CC) $(CFLAGS) $(OBJ3) -o $(PROGRAM_NAME3)
 
 run:
-	@./serv
+	@./serv $(PORT)
 	@./emissor
 	@./exibidor
 
@@ -28,4 +28,5 @@ clean:
 	@rm serv 2>/dev/null || true
 	@rm emissor 2>/dev/null || true
 	@rm exibidor 2>/dev/null || true
+	@clear
 # O (2>/dev/null || true) evita mensagens de erro caso não exista main.

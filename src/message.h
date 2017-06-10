@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #define MAXDATASIZE 512
 #define OK 1
@@ -31,7 +34,7 @@ Algo como:
 typedef struct client
 {
 	uint16_t id;
-	char nome[MAXNOMESIZE];
+	char nome[MAXNAMESIZE];
 } client_t;
 
 */
