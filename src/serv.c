@@ -80,7 +80,8 @@ int main(int argc, char* argv[])
 				}
 				else // Socket usado já está conectado ao servidor.
 				{
-					// DO THING
+					// AQUI QUE A PUTARIA COMEÇA.
+					// NESSA PARTE QUE RECEBEREMOS AS MENSAGENS.
 				}
 			}
 		}
