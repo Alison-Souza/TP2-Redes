@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define MAXDATASIZE 512
 #define OK 1

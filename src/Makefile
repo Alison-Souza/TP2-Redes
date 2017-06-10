@@ -9,6 +9,9 @@ OBJ1 = serv.o
 OBJ2 = emissor.o
 OBJ3 = exibidor.o
 PORT = 55000
+IP = 127.0.0.1:55000
+
+#Tem como deixar concatenar variáveis no makefile??
 
 all:
 	$(CC) -c $(CFLAGS) serv.c
@@ -20,8 +23,8 @@ all:
 
 run:
 	@./serv $(PORT)
-	@./emissor
-	@./exibidor
+	@./emissor $(IP)
+	@./exibidor $(IP)
 
 clean:
 	@rm -rf *.o *.a *.out
