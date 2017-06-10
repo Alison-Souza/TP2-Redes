@@ -2,5 +2,6 @@
 
 int main(int argc, char* argv[])
 {
+	printf("Sou o emissor\n");
 	return 0;
 }
