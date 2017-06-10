@@ -11,7 +11,7 @@ OBJ3 = exibidor.o
 PORT = 55000
 IP = 127.0.0.1:55000
 
-#Tem como deixar concatenar variáveis no makefile??
+#Tem como concatenar variáveis no makefile??
 
 all:
 	$(CC) -c $(CFLAGS) serv.c
