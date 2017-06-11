@@ -28,6 +28,8 @@ class Client:
         message_type, id_origin, id_destiny, seq_num = self.extract_header(data)
         if message_type == msg_type.OK:
             self.id = id_destiny
+            print_blue('Receive OK from: ' + str(id_origin))
+            print_blue('Seq number: ' + str(seq_num))
             return True
         else:
             print_error('Expect msg_type.OK but is ' + str(data))
@@ -72,11 +74,7 @@ class Client:
             if not data :
                 print_error('\nDisconnected from chat server')
                 sys.exit()
-            else :
-                #print data
-                sys.stdout.write(data)
-                self.prompt()
         except:
-            print_error('Error in receive data! MSG type.')
+            print_error('Error in receive data!')
             sys.exit()
         return data

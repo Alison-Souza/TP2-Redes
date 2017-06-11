@@ -13,14 +13,12 @@ class Emissor(Client):
         return super(Emissor, self).received_data(self.sock)
 
     def manage_header(self, data):
-        what_type, id_origin, id_destiny, seq_num = extract_header(data)
+        what_type, id_origin, id_destiny, seq_num = self.extract_header(data)
 
-        if id_destiny != self.id or self.id != 0:
+        if id_destiny != self.id and self.id != 0:
             print_error('Message not for you')
             print_error('id_destiny: ' + str(id_destiny))
-            sys.exit()
-
-        if what_type == msg_type.OK:
+        elif what_type == msg_type.OK:
             print_blue('Receive OK from: ' + str(id_origin))
             print_blue('Seq number: ' + str(seq_num))
         elif what_type == msg_type.ERRO:
@@ -37,7 +35,6 @@ class Emissor(Client):
             # TODO: o emissor vai printar a mensagem na tela?
             # TODO: se o DATA tiver mais dados? while True?
             print_blue('MSG for you, maybe!')
-            data = self.receive_data()
             print(data)
         elif what_type == msg_type.CREQ:
             print_error('Wrong request CREQ, this is not for me!')
@@ -69,7 +66,7 @@ class Emissor(Client):
                 #incoming message from remote server
                 if sock == self.sock:
                     data = self.receive_data()
-                    if not data :
+                    if not data:
                         print_blue('\nDisconnected from chat server')
                         sys.exit()
                     self.manage_header(data)
@@ -77,7 +74,7 @@ class Emissor(Client):
                 #user entered a message
                 else :
                     msg = sys.stdin.readline()
-                    self.send_data((msg_type.MSG, 0, SERVER_ID, 0), msg)
+                    self.send_data((msg_type.MSG, self.id, SERVER_ID, 0), msg)
                     self.prompt()
 
     def prompt(self):

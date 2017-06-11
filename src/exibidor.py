@@ -13,10 +13,15 @@ class Exibidor(Client):
         return super(Exibidor, self).received_data(self.sock)
 
     def manage_header(self, data):
-        what_type, id_origin, id_destiny, seq_num = extract_header(data)
+        what_type, id_origin, id_destiny, seq_num = self.extract_header(data)
+
+        print_blue('Receive data\nfrom: ' + str(id_origin))
+        print_blue('to: ' + str(id_destiny))
+        print_blue('I\'m ' + str(self.id))
+
 
         #if it's not for you, ignore
-        if id_destiny != self.id or self.id != 0:
+        if id_destiny != self.id and self.id != 0:
             print_error('Message not for you')
             print_error('id_destiny: ' + str(id_destiny))
             sys.exit()
@@ -37,9 +42,7 @@ class Exibidor(Client):
             # Recebe uma mensagem e printa na tela
             # TODO: o emissor vai printar a mensagem na tela?
             # TODO: se o DATA tiver mais dados? while True?
-            print_blue('MSG for you, maybe!')
-            data = self.receive_data()
-            print(data)
+            print_blue('[id:' + str(id_origin) + ']> ' + data[self.head_struct.size:].decode('ascii'), end="") # DEBUG purpose
         elif what_type == msg_type.CREQ:
             print_error('Wrong request CREQ, this is not for me!')
             print_error(header)
@@ -60,8 +63,7 @@ class Exibidor(Client):
             sys.exit()
 
         while True:
-            socket_list = [self.sock]
-            print_green(1)
+            socket_list = [sys.stdin, self.sock]
 
             # Get the list sockets which are readable
             read_sockets, write_sockets, error_sockets = select.select(socket_list , [], [])
@@ -74,7 +76,17 @@ class Exibidor(Client):
                         print_blue('\nDisconnected from chat server')
                         sys.exit()
                     self.manage_header(data)
-
+                elif sock == sys.stdin:
+                    command = sys.stdin.readline()
+                    if command[:-1] == 'help':
+                        # TODO: Do a help message
+                        pass
+                    elif command[:-1] == 'status':
+                        print_green('ID: ' + str(self.id))
+                        print_green('socket_list: ' + str(socket_list))
+                    elif command[:-1] == 'exit':
+                        # TODO: send FLW to all clients
+                        sys.exit()
 
 def main(args):
     if(len(args) < 3) :

@@ -22,6 +22,8 @@ class Connection:
     def getConnections(self):
         return self.con
 
+    # Store of ids to exhibitors
+    # TODO: Yuri, you idiot.... a emitter only have one exhibitors
     def addConnection(self, x):
         if x is list:
             self.con += x
@@ -58,6 +60,9 @@ class Server:
         '''
         self.head_struct = struct.Struct('! H H H H')
 
+        # dict to store who can send message to who
+        self.graph = dict()
+
     def __del__(self):
         # TODO: send FLW to everybody
         print_error('SPOILERS: Darth Vader died!')
@@ -66,7 +71,7 @@ class Server:
     def getSockById(self, id):
         for conn in self.connections:
             if conn.getId() == id:
-                return conn
+                return conn.getSock()
         return None
 
     def getIdBySock(self, sock):
@@ -126,13 +131,14 @@ class Server:
 
         if id_origin == 0: # is Exhibitor
             print_blue('New Exhibitor tring to connect')
-            id = self.getAvailableId(1)
+            id = self.getAvailableId(2**12)
             conn = Connection(id, addr, sockfd, 'ex')
             self.connections.append(conn)
             ret[0] = msg_type.OK
             ret[1] = SERVER_ID
             ret[2] = id
         elif 0 < id_origin < 2**12: # is Emitter
+            # Useless because don't associate a Exhibitor
             print_blue('New Emitter tring to connect')
             conn = Connection(id_origin, addr, sockfd, 'em')
             self.connections.append(conn)
@@ -144,9 +150,10 @@ class Server:
             if sock is not None:
                 ret[0] = msg_type.OK
                 ret[1] = SERVER_ID
-                ret[2] = getAvailableId(1)
+                ret[2] = self.getAvailableId(1)
                 conn = Connection(ret[2], addr, sockfd, 'em')
                 self.connections.append(conn)
+                conn.addConnection(id_origin)
             else:
                 ret[0] = msg_type.ERRO
                 ret[1] = SERVER_ID
@@ -233,6 +240,9 @@ class Server:
                     if command[:-1] == 'help':
                         # TODO: Do a help message
                         pass
+                    elif command[:-1] == 'status':
+                        for conn in self.connections:
+                            print_green(str(conn.getId()) + str(conn.getConnections()))
                     elif command[:-1] == 'exit':
                         # TODO: send FLW to all clients
                         sys.exit()
@@ -276,8 +286,16 @@ class Server:
                         data = data[self.head_struct.size:].decode('ascii')
                         # TODO: while true for read more messages?
                         if data:
-                            # DEBUG purpose
-                            print_blue(str(sock.getpeername()) + ' ' + data, end="")
+                            print_blue(str(sock.getpeername()) + ' ' + data, end="") # DEBUG purpose
+                            for conn in self.connections:
+                                if conn == self.server_socket:
+                                    continue
+                                if conn.getId() == id_origin:
+                                    for who_to_send in conn.getConnections():
+                                        print_blue('Trying to send message to ' + str(who_to_send))
+                                        self.send_data((msg_type.MSG, id_origin, who_to_send, 0), self.getSockById(who_to_send), data)
+                                        # TODO: wait OK?
+                                    break
                         else:
                             continue
                     elif head == msg_type.CREQ:
