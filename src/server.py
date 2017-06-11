@@ -6,6 +6,25 @@ import sys
 
 import struct
 import binascii
+import ctypes
+
+# keep it as an exponent of 2
+RECV_BUFFER = 4096
+
+class Connection:
+    def __init__(self, id, addr, sock):
+        self.id = id
+        self.addr = addr
+        self.sock = sock
+
+    def getId(self):
+        return self.id
+
+    def getaddr(self):
+        return self.sock.getsockname()
+
+    def getSock(self):
+        return self.sock
 
 class Server:
     def __init__(self, port):
@@ -18,6 +37,36 @@ class Server:
         # Add server socket to the list of readable connections
         self.connections = []
         self.connections.append(self.server_socket)
+        self.head_struct = struct.Struct('! H H H H')
+
+    def receive_header(self, sock):
+        try:
+            data = sock.recv(self.head_struct.size)
+            unpacked_data = self.head_struct.unpack(data)
+
+            # Print head in hex
+            b = ctypes.create_string_buffer(self.head_struct.size)
+            self.head_struct.pack_into(b, 0, *unpacked_data)
+            print(binascii.hexlify(b.raw))
+
+        except:
+            print('Deu merda em receive_header')
+            raise
+        return unpacked_data
+
+    def receive_data(self, sock):
+        try:
+            data = sock.recv(RECV_BUFFER - self.head_struct.size)
+        except:
+            # TODO: check which is correct
+            # addr = sock.getpeername()
+            addr = sock.getsockname()
+            self.broadcast_data(sock, "Client (%s, %s) is offline" % addr)
+            print("Client (%s, %s) is offline" % addr)
+            sock.close()
+            self.connections.remove(sock)
+            return None
+        return data
 
     # Function to broadcast chat messages to all connected clients
     def broadcast_data (self, sock, message):
@@ -26,15 +75,12 @@ class Server:
             if socket != self.server_socket and socket != sock :
                 try :
                     socket.send(message)
-
                 except :
                     # broken socket connection may be, chat client pressed ctrl+c for example
                     socket.close()
                     self.connections.remove(socket)
 
     def start(self):
-        RECV_BUFFER = 4096 # Advisable to keep it as an exponent of 2
-
         print("Chat server started on port " + str(self.port))
 
         while True:
@@ -44,7 +90,6 @@ class Server:
             try:
                 read_sockets, write_sockets, error_sockets = select.select(socket_list,[],[])
             except Exception as e:
-                print('EITA PORRA')
                 sys.exit()
 
             for sock in read_sockets:
@@ -61,6 +106,7 @@ class Server:
                 elif sock == sys.stdin:
                     command = sys.stdin.readline()
                     if command[:-1] == 'exit':
+                        # TODO: send FLW to all clients
                         sys.exit()
                     elif command[:-1] == 'list':
                         # TODO: show a list of connections
@@ -68,17 +114,13 @@ class Server:
 
                 #Some incoming message from a client
                 else:
-                    # Data recieved from client, process it
-                    try:
-                        data = sock.recv(RECV_BUFFER)
-                        if data:
-                            self.broadcast_data(sock, "\r" + '<' + str(sock.getpeername()) + '> ' + data)
-
-                    except:
-                        self.broadcast_data(sock, "Client (%s, %s) is offline" % addr)
-                        print("Client (%s, %s) is offline" % addr)
-                        sock.close()
-                        self.connections.remove(sock)
+                    # Data received from client, process it
+                    header = self.receive_header(sock)
+                    # receive as string
+                    data = self.receive_data(sock)
+                    if data:
+                        self.broadcast_data(sock, "\r" + '<' + str(sock.getpeername()) + '> ' + data)
+                    else:
                         continue
 
         self.server_socket.close()

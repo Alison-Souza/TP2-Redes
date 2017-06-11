@@ -6,9 +6,14 @@ import sys
 
 import struct
 import binascii
+import ctypes
+
+# keep it as an exponent of 2
+RECV_BUFFER = 4096
 
 class Client:
     def __init__(self, **kwargs):
+        # set values from default if not sent
         self.host = kwargs.get('host', '127.0.0.1')
         self.port = kwargs.get('port', 5000)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,7 +22,7 @@ class Client:
         # TODO: will send FLW if a person use ctrl+c
         self.sock.send('FLW')
         self.sock.close()
-        print('died')
+        print('Client died')
 
     def start(self):
         try:
@@ -37,7 +42,7 @@ class Client:
             for sock in read_sockets:
                 #incoming message from remote server
                 if sock == self.sock:
-                    data = sock.recv(4096)
+                    data = sock.recv(RECV_BUFFER)
                     if not data :
                         print('\nDisconnected from chat server')
                         sys.exit()
@@ -58,7 +63,6 @@ class Client:
 
 def main(args):
     if(len(args) < 3) :
-        print('Use only with Python2')
         print('Usage : python client.py <hostname> <port>')
         sys.exit()
 
