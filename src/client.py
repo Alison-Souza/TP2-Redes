@@ -10,8 +10,6 @@ class Client:
         return self.id
 
     def __del__(self):
-        # TODO: will send FLW if a person use ctrl+c
-        # self.sock.send('FLW')
         self.sock.close()
         print_error('Client died!')
 
@@ -28,8 +26,8 @@ class Client:
         message_type, id_origin, id_destiny, seq_num = self.extract_header(data)
         if message_type == msg_type.OK:
             self.id = id_destiny
-            print_blue('Receive OK from: ' + str(id_origin))
-            print_blue('Seq number: ' + str(seq_num))
+            print_warning('Receive OK from: ' + str(id_origin))
+            print_warning('Seq number: ' + str(seq_num))
             return True
         else:
             print_error('Expect msg_type.OK but is ' + str(data))
@@ -64,7 +62,7 @@ class Client:
         # Print head in hex
         b = ctypes.create_string_buffer(self.head_struct.size)
         self.head_struct.pack_into(b, 0, *unpacked_data)
-        print_bold(binascii.hexlify(b.raw))
+        print_bold(b.raw)
 
         return unpacked_data
 

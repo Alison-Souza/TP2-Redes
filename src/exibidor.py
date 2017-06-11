@@ -15,20 +15,14 @@ class Exibidor(Client):
     def manage_header(self, data):
         what_type, id_origin, id_destiny, seq_num = self.extract_header(data)
 
-        print_blue('Receive data\nfrom: ' + str(id_origin))
-        print_blue('to: ' + str(id_destiny))
-        print_blue('I\'m ' + str(self.id))
-
-
         #if it's not for you, ignore
         if id_destiny != self.id and self.id != 0:
             print_error('Message not for you')
             print_error('id_destiny: ' + str(id_destiny))
-            sys.exit()
-
-        if what_type == msg_type.OK:
-            print_blue('Receive OK from: ' + str(id_origin))
-            print_blue('Seq number: ' + str(seq_num))
+            print_error('Remember who you are ' + str(self.id))
+        elif what_type == msg_type.OK:
+            print_warning('Receive OK from: ' + str(id_origin))
+            print_warning('Seq number: ' + str(seq_num))
         elif what_type == msg_type.ERRO:
             print_error('ERRO returned from server')
         elif what_type == msg_type.FLW:
@@ -36,13 +30,15 @@ class Exibidor(Client):
             print_blue('FLW received from server')
             # TODO: check message seq, now set to zero for XGH
             self.send_data((msg_type.OK, self.id, SERVER_ID, 0))
-            self.sock.close()
             sys.exit()
         elif what_type == msg_type.MSG:
             # Recebe uma mensagem e printa na tela
             # TODO: o emissor vai printar a mensagem na tela?
             # TODO: se o DATA tiver mais dados? while True?
-            print_blue('[id:' + str(id_origin) + ']> ' + data[self.head_struct.size:].decode('ascii'), end="") # DEBUG purpose
+            if id_origin == SERVER_ID:
+                print_green(data[self.head_struct.size:].decode('ascii'), end="")
+            else:
+                print_green('[id:' + str(id_origin) + ']> ' + data[self.head_struct.size:].decode('ascii'), end="") # DEBUG purpose
         elif what_type == msg_type.CREQ:
             print_error('Wrong request CREQ, this is not for me!')
             print_error(header)
@@ -56,6 +52,7 @@ class Exibidor(Client):
             self.send_data((msg_type.CLIST, self.id, SERVER_ID, 0), 'OK')
 
     def start(self):
+        # TODO: make dynamic input od if . Example: 0
         if self.try_connect(0) is not None:
             print_blue('Connected to remote host.')
         else:

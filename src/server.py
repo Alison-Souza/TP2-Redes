@@ -23,7 +23,6 @@ class Connection:
         return self.con
 
     # Store of ids to exhibitors
-    # TODO: Yuri, you idiot.... a emitter only have one exhibitors
     def addConnection(self, x):
         if x is list:
             self.con += x
@@ -64,7 +63,26 @@ class Server:
         self.graph = dict()
 
     def __del__(self):
-        # TODO: send FLW to everybody
+        print_blue('Sendind FLW to all clients!')
+        for conn in self.connections:
+            id_to_close = conn.getId()
+            try:
+                self.send_data((msg_type.FLW, SERVER_ID, id_to_close, 0), conn.sock)
+            except:
+                print_error('Error trying to send data from ' + str(id_to_close))
+            try:
+                # TODO: Don't know how to fix this
+                data = conn.sock.receive_data()
+                head, id_origin, id_destiny, seq_num = self.extract_header(data)
+                if head == msg_type.OK and id_origin == id_to_close:
+                    print_blue('Closing connection with ' + str(id_origin))
+                    conn.sock.close()
+                else:
+                    # TODO: Try again?
+                    pass
+            except:
+                print_error('Error trying to receive data from ' + str(id_to_close))
+
         print_error('SPOILERS: Darth Vader died!')
         self.server_socket.close()
 
@@ -154,6 +172,8 @@ class Server:
                 conn = Connection(ret[2], addr, sockfd, 'em')
                 self.connections.append(conn)
                 conn.addConnection(id_origin)
+                message = '**** User ' +str(ret[2]) + ' connected to chat\n'
+                self.send_data((msg_type.MSG, SERVER_ID, self.getIdBySock(sock), 0), sock, message)
             else:
                 ret[0] = msg_type.ERRO
                 ret[1] = SERVER_ID
@@ -182,7 +202,7 @@ class Server:
             # TODO: check which is correct
             # addr = sock.getpeername()
             addr = sock.getsockname()
-            self.broadcast_data(sock, "Client (%s, %s) is offline" % addr)
+            # self.broadcast_data(sock, "Client (%s, %s) is offline" % addr)
             print("Client (%s, %s) is offline" % addr)
             sock.close()
             # TODO: Remove from connected clients
@@ -244,7 +264,6 @@ class Server:
                         for conn in self.connections:
                             print_green(str(conn.getId()) + str(conn.getConnections()))
                     elif command[:-1] == 'exit':
-                        # TODO: send FLW to all clients
                         sys.exit()
                     elif command[:-1] == 'list':
                         # TODO: show a list of connections
@@ -292,7 +311,7 @@ class Server:
                                     continue
                                 if conn.getId() == id_origin:
                                     for who_to_send in conn.getConnections():
-                                        print_blue('Trying to send message to ' + str(who_to_send))
+                                        print_blue('Trying to send message from ' + str(id_origin) + ' to ' + str(who_to_send))
                                         self.send_data((msg_type.MSG, id_origin, who_to_send, 0), self.getSockById(who_to_send), data)
                                         # TODO: wait OK?
                                     break

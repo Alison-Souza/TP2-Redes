@@ -18,6 +18,9 @@ import pprint
 RECV_BUFFER = 4096
 SERVER_ID = 2**16-1
 
+# DEBUG
+DEBUG = False
+
 # messages type
 class msg_type:
 	OK = 1
@@ -46,10 +49,11 @@ def print_header(msg, end=None):
 		print(bcolors.HEADER + str(msg) + bcolors.ENDC, end=end)
 
 def print_bold(msg, end=None):
-	if end is None:
-		print(bcolors.BOLD + str(msg) + bcolors.ENDC)
-	else:
-		print(bcolors.BOLD + str(msg) + bcolors.ENDC, end=end)
+	if DEBUG:
+		if end is None:
+			print(bcolors.BOLD + str(msg) + bcolors.ENDC)
+		else:
+			print(bcolors.BOLD + str(msg) + bcolors.ENDC, end=end)
 
 def print_blue(msg, end=None):
 	if end is None:
@@ -64,10 +68,11 @@ def print_green(msg, end=None):
 		print(bcolors.OKGREEN + str(msg) + bcolors.ENDC, end=end)
 
 def print_warning(msg, end=None):
-	if end is None:
-		print(bcolors.WARNING + str(msg) + bcolors.ENDC)
-	else:
-		print(bcolors.WARNING + str(msg) + bcolors.ENDC, end=end)
+	if DEBUG:
+		if end is None:
+			print(bcolors.WARNING + str(msg) + bcolors.ENDC)
+		else:
+			print(bcolors.WARNING + str(msg) + bcolors.ENDC, end=end)
 
 # For print errors in RED
 def print_error(msg, end=None):
