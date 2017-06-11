@@ -41,6 +41,7 @@ class Connection:
         # if not close
         # TODO: Send FLW?
         self.sock.close()
+        print_error('Connection died!')
 
 class Server:
     def __init__(self, port):
@@ -59,6 +60,7 @@ class Server:
 
     def __del__(self):
         # TODO: send FLW to everybody
+        print_error('SPOILERS: Darth Vader died!')
         self.server_socket.close()
 
     def getSockById(self, id):
@@ -150,18 +152,21 @@ class Server:
             return None
         return data
 
-    def send_data(self, header, sock, data = ''):
+    def send_data(self, header, sock, data=''):
         if header is not tuple:
             header = tuple(header)
+        data = bytes(data, 'ascii')
         try:
-            b = ctypes.create_string_buffer(self.head_struct.size)
-            self.head_struct.pack_into(b, 0, *header)
-            print_bold(b.raw)
-            if data == '':
-                sock.send(b)
+            if len(data) > 0:
+                header = (*header, data)
+                struct_aux = struct.Struct('! H H H H ' + str(len(data)) + 's')
             else:
-                sock.send(b + data)
-                print_bold(data)
+                struct_aux = self.head_struct
+
+            b = ctypes.create_string_buffer(struct_aux.size)
+            struct_aux.pack_into(b, 0, *header)
+            print_bold(b.raw)
+            sock.send(b)
         except:
             print_error('Deu merda em send_data')
             raise
@@ -224,10 +229,10 @@ class Server:
                         pass
                     elif header[0] == msg_type.MSG:
                         # receive as string
-                        data = data[self.head_struct.size:]
+                        data = data[self.head_struct.size:].decode('ascii')
                         # TODO: while true for read more messages?
                         if data:
-                            print(bcolors.OKBLUE + data + bcolors.ENDC)
+                            print_blue(data, end="")
                             # self.broadcast_data(sock, "\r" + '<' + str(sock.getpeername()) + '> ' + data)
                         else:
                             continue

@@ -35,21 +35,44 @@ class bcolors:
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
 
-def print_header(msg):
-	print(bcolors.HEADER + str(msg) + bcolors.ENDC)
+def print_header(msg, end=None):
+	if end is None:
+		print(bcolors.HEADER + str(msg) + bcolors.ENDC)
+	else:
+		print(bcolors.HEADER + str(msg) + bcolors.ENDC, end=end)
 
-def print_bold(msg):
-	print(bcolors.BOLD + str(msg) + bcolors.ENDC)
 
-def print_blue(msg):
-	print(bcolors.OKBLUE + str(msg) + bcolors.ENDC)
+def print_bold(msg, end=None):
+	if end is None:
+		print(bcolors.BOLD + str(msg) + bcolors.ENDC)
+	else:
+		print(bcolors.BOLD + str(msg) + bcolors.ENDC, end=end)
 
-def print_green(msg):
-	print(bcolors.OKGREEN + str(msg) + bcolors.ENDC)
 
-def print_warning(msg):
-	print(bcolors.WARNING + str(msg) + bcolors.ENDC)
+def print_blue(msg, end=None):
+	if end is None:
+		print(bcolors.OKBLUE + str(msg) + bcolors.ENDC)
+	else:
+		print(bcolors.OKBLUE + str(msg) + bcolors.ENDC, end=end)
+
+
+def print_green(msg, end=None):
+	if end is None:
+		print(bcolors.OKGREEN + str(msg) + bcolors.ENDC)
+	else:
+		print(bcolors.OKGREEN + str(msg) + bcolors.ENDC, end=end)
+
+
+def print_warning(msg, end=None):
+	if end is None:
+		print(bcolors.WARNING + str(msg) + bcolors.ENDC)
+	else:
+		print(bcolors.WARNING + str(msg) + bcolors.ENDC, end=end)
+
 
 # For print errors in RED
-def print_error(msg):
-	print(bcolors.FAIL + str(msg) + bcolors.ENDC)
+def print_error(msg, end=None):
+	if end is None:
+		print(bcolors.FAIL + str(msg) + bcolors.ENDC)
+	else:
+		print(bcolors.FAIL + str(msg) + bcolors.ENDC, end=end)

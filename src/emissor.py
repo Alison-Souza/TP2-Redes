@@ -56,6 +56,8 @@ class Emissor(Client):
             print_error('Error to connect server.')
             return False
 
+        self.prompt()
+
         while True:
             socket_list = [sys.stdin, self.sock]
 

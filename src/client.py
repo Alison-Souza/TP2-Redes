@@ -10,7 +10,7 @@ class Client:
         # TODO: will send FLW if a person use ctrl+c
         # self.sock.send('FLW')
         self.sock.close()
-        print('Client died')
+        print_error('Client died!')
 
     def try_connect(self, id):
         try:
@@ -20,7 +20,7 @@ class Client:
             return False
         self.send_data((msg_type.OI, id, 0, 0))
         data = self.sock.recv(RECV_BUFFER)
-        print(data)
+        print_warning(data)
         # TODO: if return ERRO, return False
         return True
 
@@ -31,7 +31,6 @@ class Client:
         try:
             if len(data) > 0:
                 header = (*header, data)
-                print_blue('! H H H H ' + str(len(data)) + 's')
                 struct_aux = struct.Struct('! H H H H ' + str(len(data)) + 's')
             else:
                 struct_aux = self.head_struct
@@ -58,9 +57,9 @@ class Client:
 
         return unpacked_data
 
-    def receive_data(self, sock):
+    def receive_data(self):
         try:
-            data = sock.recv(RECV_BUFFER)
+            data = self.sock.recv(RECV_BUFFER)
             if not data :
                 print_error('\nDisconnected from chat server')
                 sys.exit()
