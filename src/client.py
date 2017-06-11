@@ -1,15 +1,4 @@
-# From Python 2.6 you can import the print function from Python 3:
-from __future__ import print_function
-import socket
-import select
-import sys
-
-import struct
-import binascii
-import ctypes
-
-# keep it as an exponent of 2
-RECV_BUFFER = 4096
+from utils import *
 
 class Client:
     def __init__(self, **kwargs):
@@ -17,12 +6,38 @@ class Client:
         self.host = kwargs.get('host', '127.0.0.1')
         self.port = kwargs.get('port', 5000)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.head_struct = struct.Struct('! H H H H')
 
     def __del__(self):
         # TODO: will send FLW if a person use ctrl+c
-        self.sock.send('FLW')
+        # self.sock.send('FLW')
         self.sock.close()
         print('Client died')
+
+    def send_header(self, values):
+        try:
+            b = ctypes.create_string_buffer(self.head_struct.size)
+            self.head_struct.pack_into(b, 0, *values)
+            self.sock.send(b)
+            print(b.raw)
+        except:
+            print('Deu merda em send_header')
+            raise
+
+    def receive_header(self, sock):
+        try:
+            data = sock.recv(self.head_struct.size)
+            unpacked_data = self.head_struct.unpack(data)
+
+            # Print head in hex
+            b = ctypes.create_string_buffer(self.head_struct.size)
+            self.head_struct.pack_into(b, 0, *unpacked_data)
+            print(binascii.hexlify(b.raw))
+
+        except:
+            print('Deu merda em receive_header')
+            raise
+        return unpacked_data
 
     def start(self):
         try:
@@ -31,6 +46,10 @@ class Client:
         except:
             print('Unable to connect')
             raise
+        self.send_header((msg_type.OI, 0, 0, 0))
+        data = self.sock.recv(RECV_BUFFER)
+        print(data)
+
         print('Connected to remote host. Start sending messages')
 
         while True:
@@ -54,6 +73,7 @@ class Client:
                 #user entered a message
                 else :
                     msg = sys.stdin.readline()
+                    self.send_header((msg_type.MSG, 0, 2**16-1, 0))
                     self.sock.send(msg)
                     self.prompt()
 
@@ -71,6 +91,7 @@ def main(args):
 
     client = Client(host=host, port=port)
     client.start()
+
 
 if __name__ == "__main__":
     main(sys.argv)
