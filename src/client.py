@@ -6,6 +6,9 @@ class Client:
         self.head_struct = struct.Struct('! H H H H')
         self.id = 0
 
+    def getId(self):
+        return self.id
+
     def __del__(self):
         # TODO: will send FLW if a person use ctrl+c
         # self.sock.send('FLW')
@@ -17,12 +20,18 @@ class Client:
             self.sock.connect((self.host, self.port))
             self.sock.settimeout(5)
         except:
-            return False
+            print_error('Error in connect server')
+            return None
         self.send_data((msg_type.OI, id, 0, 0))
         data = self.sock.recv(RECV_BUFFER)
         print_warning(data)
-        # TODO: if return ERRO, return False
-        return True
+        message_type, id_origin, id_destiny, seq_num = self.extract_header(data)
+        if message_type == msg_type.OK:
+            self.id = id_destiny
+            return True
+        else:
+            print_error('Expect msg_type.OK but is ' + str(data))
+            return None
 
     def send_data(self, header, data=''):
         if header is not tuple:

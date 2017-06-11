@@ -75,12 +75,33 @@ class Server:
                 return conn.getId()
         return None
 
-    def getAvailableId(self):
+    def removeSock(self, param):
+        # param can be Id or sock object
+
+        if param is int:
+            for conn in self.connections:
+                if param == conn.getId():
+                    print_warning('Remove:', end=" ")
+                    print_warning(conn.getId())
+                    self.connections.remove(conn)
+                    return True
+        else: # sock object
+            for conn in self.connections:
+                if param == conn.getSock():
+                    print_warning('Remove:', end=" ")
+                    print_warning(conn.getId())
+                    self.connections.remove(conn)
+                    return True
+        print_warning('Cannot find sock to remove:')
+        print_warning(param)
+        return False
+
+    def getAvailableId(self, init_value=2**12):
         ids = [x.getId() for x in self.connections]
         if ids is None:
-            return 1
+            return init_value
         else:
-            index = 1
+            index = init_value
             while True:
                 if index in ids:
                     index += 1
@@ -104,23 +125,33 @@ class Server:
         ret = [0,0,0,0]
 
         if id_origin == 0: # is Exhibitor
-            id = self.getAvailableId()
+            print_blue('New Exhibitor tring to connect')
+            id = self.getAvailableId(1)
             conn = Connection(id, addr, sockfd, 'ex')
             self.connections.append(conn)
             ret[0] = msg_type.OK
+            ret[1] = SERVER_ID
             ret[2] = id
         elif 0 < id_origin < 2**12: # is Emitter
+            print_blue('New Emitter tring to connect')
             conn = Connection(id_origin, addr, sockfd, 'em')
             self.connections.append(conn)
             ret[0] = msg_type.OK
             ret[2] = id_origin
-        elif 2**12 <= id_origin < 2**13 - 1:
-            # TODO: find the Exhibitor with this id_origin
-            sock = self.getSockById(id_origin).getSock()
-            ret[0] = msg_type.ERRO
+        elif 2**12 <= id_origin < 2**13 - 1: # is Emitter
+            print_blue('New Emitter tring to connect')
+            sock = self.getSockById(id_origin)
+            if sock is not None:
+                ret[0] = msg_type.OK
+                ret[1] = SERVER_ID
+                ret[2] = getAvailableId(1)
+                conn = Connection(ret[2], addr, sockfd, 'em')
+                self.connections.append(conn)
+            else:
+                ret[0] = msg_type.ERRO
+                ret[1] = SERVER_ID
 
         self.send_data(ret, sockfd)
-
         return sockfd
 
     def extract_header(self, data):
@@ -185,6 +216,8 @@ class Server:
             try:
                 read_sockets, write_sockets, error_sockets = select.select(socket_list,[],[])
             except Exception as e:
+                print_error('Something wrong in select')
+                print_error(socket_list)
                 sys.exit()
 
             for sock in read_sockets:
@@ -212,33 +245,44 @@ class Server:
                     # Data received from client, process it
                     data = self.receive_data(sock)
                     print_bold(data)
-                    header = self.extract_header(data)
 
-                    if header[0] == msg_type.OK:
+                    header = self.extract_header(data)
+                    # Remove socket if send nothing
+                    if header is None:
+                        print_warning('header is None, why?')
+                        aux_id = self.getIdBySock(sock)
+                        self.removeSock(sock)
+                        connections_list.remove(sock)
+                        continue
+                    else:
+                        head, id_origin, id_destiny, seq_num = header[:4]
+
+                    if head == msg_type.OK:
                         # Toda as mensagens tem que ter um OK. O envio de uma mensagem de
                         # OK nao incrementa o numero de sequencia das mensagens do cliente (mensagens de OK nao tem
                         # numero de sequencia proprio
                         pass
-                    elif header[0] == msg_type.ERRO:
+                    elif head == msg_type.ERRO:
                         # igual ao OK mas indicando que alguma coisa deu errado
-                        pass
-                    elif header[0] == msg_type.OI:
+                        print_error(str(sock.getpeername()) + ' ' + data, end="")
+                    elif head == msg_type.OI:
                         print_error('Impossible situation!\nPray for modern gods of internet!')
                         # Tem alguma coisa dando muito errado ai
-                    elif header[0] == msg_type.FLW:
-                        pass
-                    elif header[0] == msg_type.MSG:
-                        # receive as string
+                    elif head == msg_type.FLW:
+                        print_warning('send FLW for everyone')
+                        # TODO: send FLW to everyone and wait OK
+                    elif head == msg_type.MSG:
+                        # Receive message
                         data = data[self.head_struct.size:].decode('ascii')
                         # TODO: while true for read more messages?
                         if data:
-                            print_blue(data, end="")
-                            # self.broadcast_data(sock, "\r" + '<' + str(sock.getpeername()) + '> ' + data)
+                            # DEBUG purpose
+                            print_blue(str(sock.getpeername()) + ' ' + data, end="")
                         else:
                             continue
-                    elif header[0] == msg_type.CREQ:
+                    elif head == msg_type.CREQ:
                         pass
-                    elif header[0] == msg_type.CLIST:
+                    elif head == msg_type.CLIST:
                         # uma chatice, leia documentacao, no final o cliente responde OK
                         pass
 

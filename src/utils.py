@@ -11,8 +11,12 @@ import ctypes
 # sort list with attribute
 import operator
 
+# DEBUG purpose
+import pprint
+
 # keep it as an exponent of 2
 RECV_BUFFER = 4096
+SERVER_ID = 2**16-1
 
 # messages type
 class msg_type:
@@ -41,13 +45,11 @@ def print_header(msg, end=None):
 	else:
 		print(bcolors.HEADER + str(msg) + bcolors.ENDC, end=end)
 
-
 def print_bold(msg, end=None):
 	if end is None:
 		print(bcolors.BOLD + str(msg) + bcolors.ENDC)
 	else:
 		print(bcolors.BOLD + str(msg) + bcolors.ENDC, end=end)
-
 
 def print_blue(msg, end=None):
 	if end is None:
@@ -55,20 +57,17 @@ def print_blue(msg, end=None):
 	else:
 		print(bcolors.OKBLUE + str(msg) + bcolors.ENDC, end=end)
 
-
 def print_green(msg, end=None):
 	if end is None:
 		print(bcolors.OKGREEN + str(msg) + bcolors.ENDC)
 	else:
 		print(bcolors.OKGREEN + str(msg) + bcolors.ENDC, end=end)
 
-
 def print_warning(msg, end=None):
 	if end is None:
 		print(bcolors.WARNING + str(msg) + bcolors.ENDC)
 	else:
 		print(bcolors.WARNING + str(msg) + bcolors.ENDC, end=end)
-
 
 # For print errors in RED
 def print_error(msg, end=None):
