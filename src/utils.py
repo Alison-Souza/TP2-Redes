@@ -34,3 +34,22 @@ class bcolors:
 	ENDC = '\033[0m'
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
+
+def print_header(msg):
+	print(bcolors.HEADER + str(msg) + bcolors.ENDC)
+
+def print_bold(msg):
+	print(bcolors.BOLD + str(msg) + bcolors.ENDC)
+
+def print_blue(msg):
+	print(bcolors.OKBLUE + str(msg) + bcolors.ENDC)
+
+def print_green(msg):
+	print(bcolors.OKGREEN + str(msg) + bcolors.ENDC)
+
+def print_warning(msg):
+	print(bcolors.WARNING + str(msg) + bcolors.ENDC)
+
+# For print errors in RED
+def print_error(msg):
+	print(bcolors.FAIL + str(msg) + bcolors.ENDC)

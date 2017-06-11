@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from utils import *
 
 class Connection:
@@ -87,7 +89,8 @@ class Server:
     # add a new client and check where i have to put inside a car to beat them up
     def new_connection(self):
         sockfd, addr = self.server_socket.accept()
-        header = self.receive_header(sockfd)
+        data = self.receive_data(sockfd)
+        header = self.extract_header(data)
 
         id_type = header[0]
         if id_type != msg_type.OI:
@@ -114,28 +117,27 @@ class Server:
             sock = self.getSockById(id_origin).getSock()
             ret[0] = msg_type.ERRO
 
-        self.send_header(ret, sockfd)
+        self.send_data(ret, sockfd)
 
         return sockfd
 
-    def receive_header(self, sock):
-        try:
-            data = sock.recv(self.head_struct.size)
-            unpacked_data = self.head_struct.unpack(data)
+    def extract_header(self, data):
+        if len(data) < self.head_struct.size:
+            print_error('Wrong size of header')
+            print_error(data)
+            return None
+        data = data[:self.head_struct.size]
+        unpacked_data = self.head_struct.unpack(data)
+        # Print head in hex
+        b = ctypes.create_string_buffer(self.head_struct.size)
+        self.head_struct.pack_into(b, 0, *unpacked_data)
+        print_bold(binascii.hexlify(b.raw))
 
-            # Print head in hex
-            b = ctypes.create_string_buffer(self.head_struct.size)
-            self.head_struct.pack_into(b, 0, *unpacked_data)
-            print(bcolors.BOLD + str(binascii.hexlify(b.raw)) + bcolors.ENDC)
-
-        except:
-            print(bcolors.FAIL + 'Deu merda em receive_header' + bcolors.ENDC)
-            raise
         return unpacked_data
 
     def receive_data(self, sock):
         try:
-            data = sock.recv(RECV_BUFFER - self.head_struct.size)
+            data = sock.recv(RECV_BUFFER)
         except:
             # TODO: check which is correct
             # addr = sock.getpeername()
@@ -143,24 +145,30 @@ class Server:
             self.broadcast_data(sock, "Client (%s, %s) is offline" % addr)
             print("Client (%s, %s) is offline" % addr)
             sock.close()
+            # TODO: Remove from connected clients
             self.connections.remove(sock)
             return None
         return data
 
-    def send_header(self, values, sock):
-        if values is not tuple:
-            values = tuple(values)
+    def send_data(self, header, sock, data = ''):
+        if header is not tuple:
+            header = tuple(header)
         try:
             b = ctypes.create_string_buffer(self.head_struct.size)
-            self.head_struct.pack_into(b, 0, *values)
-            sock.send(b)
+            self.head_struct.pack_into(b, 0, *header)
+            print_bold(b.raw)
+            if data == '':
+                sock.send(b)
+            else:
+                sock.send(b + data)
+                print_bold(data)
         except:
-            print('Deu merda em send_header')
+            print_error('Deu merda em send_data')
             raise
 
     # To the all things
     def start(self):
-        print(bcolors.HEADER + "Chat server started on port " + str(self.port) + bcolors.ENDC)
+        print_header("Chat server started on port " + str(self.port))
 
         connections_list = [self.server_socket]
 
@@ -197,7 +205,9 @@ class Server:
                 #Some incoming message from a client
                 else:
                     # Data received from client, process it
-                    header = self.receive_header(sock)
+                    data = self.receive_data(sock)
+                    print_bold(data)
+                    header = self.extract_header(data)
 
                     if header[0] == msg_type.OK:
                         # Toda as mensagens tem que ter um OK. O envio de uma mensagem de
@@ -208,13 +218,14 @@ class Server:
                         # igual ao OK mas indicando que alguma coisa deu errado
                         pass
                     elif header[0] == msg_type.OI:
-                        print(bcolors.FAIL + 'Impossible situation' + bcolors.ENDC)
+                        print_error('Impossible situation!\nPray for modern gods of internet!')
                         # Tem alguma coisa dando muito errado ai
                     elif header[0] == msg_type.FLW:
                         pass
                     elif header[0] == msg_type.MSG:
                         # receive as string
-                        data = self.receive_data(sock)
+                        data = data[self.head_struct.size:]
+                        # TODO: while true for read more messages?
                         if data:
                             print(bcolors.OKBLUE + data + bcolors.ENDC)
                             # self.broadcast_data(sock, "\r" + '<' + str(sock.getpeername()) + '> ' + data)
