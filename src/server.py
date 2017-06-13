@@ -19,10 +19,13 @@ class Connection:
     def getId(self):
         return self.id
 
+    # Retorna todas as conexoes do servidor,
+    # contem uma lista de emissores e exibidores
     def getConnections(self):
         return self.con
 
     # Store of ids to exhibitors
+    # Adiciona emissor ou exibidor na lista
     def addConnection(self, x):
         if x is list:
             self.con += x
@@ -86,18 +89,21 @@ class Server:
         print_error('SPOILERS: Darth Vader died!')
         self.server_socket.close()
 
+    # Retorna o socket do cliente passando o id como parametro
     def getSockById(self, id):
         for conn in self.connections:
             if conn.getId() == id:
                 return conn.getSock()
         return None
 
+    # Retorna o socket do cliente passando pelo ID
     def getIdBySock(self, sock):
         for conn in self.connections:
             if sock == conn.getSock():
                 return conn.getId()
         return None
 
+    # Remove o cliente da lista passando o id ou socket
     def removeSock(self, param):
         # param can be Id or sock object
 
@@ -119,6 +125,7 @@ class Server:
         print_warning(param)
         return False
 
+    # Pega o primeiro id disoiivel passando um id inicial com parametro
     def getAvailableId(self, init_value=2**12):
         ids = [x.getId() for x in self.connections]
         if ids is None:
@@ -132,7 +139,8 @@ class Server:
                     break
             return index
 
-    # add a new client and check where i have to put inside a car to beat them up
+    # Metodo que configura uma nova conexao de um cliente
+    # Verifica se eh um exibidor ou emissor e associa um id
     def new_connection(self):
         sockfd, addr = self.server_socket.accept()
         data = self.receive_data(sockfd)
@@ -181,6 +189,7 @@ class Server:
         self.send_data(ret, sockfd)
         return sockfd
 
+    # Extrai e retorna o cabecalho do buffer data
     def extract_header(self, data):
         if len(data) < self.head_struct.size:
             print_error('Wrong size of header')
@@ -195,6 +204,7 @@ class Server:
 
         return unpacked_data
 
+    # Recebe e retorna o dado do socket
     def receive_data(self, sock):
         try:
             data = sock.recv(RECV_BUFFER)
@@ -210,6 +220,7 @@ class Server:
             return None
         return data
 
+    # Constroi o cabecalho concatenado a mensagem em formato binario
     def send_data(self, header, sock, data=''):
         if header is not tuple:
             header = tuple(header)
