@@ -35,7 +35,7 @@ class Emissor(Client):
         super(Exibidor, self).handle_creq(data)
 
     def start(self):
-        if self.try_connect(self.exibidor) is not None:
+        if self.try_connect(self.exibidor_id) is not None:
             print_blue('Connected to remote host.')
         else:
             return False
@@ -76,7 +76,7 @@ def main(args):
 
     host = args[1]
     port = int(args[2])
-    if len(args >= 3):
+    if len(args) >= 3:
         exibidor_id = int(args[3])
         emissor = Emissor(host=host, port=port, exibidor_id=exibidor_id)
     else:
