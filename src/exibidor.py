@@ -13,43 +13,30 @@ class Exibidor(Client):
         return super(Exibidor, self).received_data(self.sock)
 
     def manage_header(self, data):
-        what_type, id_origin, id_destiny, seq_num = self.extract_header(data)
+        super(Exibidor, self).manage_header(data)
 
-        #if it's not for you, ignore
-        if id_destiny != self.id and self.id != 0:
-            print_error('Message not for you')
-            print_error('id_destiny: ' + str(id_destiny))
-            print_error('Remember who you are ' + str(self.id))
-        elif what_type == msg_type.OK:
-            print_warning('Receive OK from: ' + str(id_origin))
-            print_warning('Seq number: ' + str(seq_num))
-        elif what_type == msg_type.ERRO:
-            print_error('ERRO returned from server')
-        elif what_type == msg_type.FLW:
-            # Aqui ele recebe o FLW do servidor, manda o OK de volta e fecha conexão
-            print_blue('FLW received from server')
-            # TODO: check message seq, now set to zero for XGH
-            self.send_data((msg_type.OK, self.id, SERVER_ID, 0))
-            sys.exit()
-        elif what_type == msg_type.MSG:
-            # Recebe uma mensagem e printa na tela
-            # TODO: o emissor vai printar a mensagem na tela?
-            # TODO: se o DATA tiver mais dados? while True?
-            if id_origin == SERVER_ID:
-                print_green(data[self.head_struct.size:].decode('ascii'), end="")
-            else:
-                print_green('[id:' + str(id_origin) + ']> ' + data[self.head_struct.size:].decode('ascii'), end="") # DEBUG purpose
-        elif what_type == msg_type.CREQ:
-            print_error('Wrong request CREQ, this is not for me!')
-            print_error(header)
-            sys.exit()
-        elif what_type == msg_type.CLIST:
-            # TODO: o emissor vai printar a mensagem na tela?
-            # TODO: se o DATA tiver mais dados? while True?
-            data = self.receive_data()
-            print(data)
-            # O cliente deve mandar uma mensgem de volta com OK
-            self.send_data((msg_type.CLIST, self.id, SERVER_ID, 0), 'OK')
+    def handle_ok(self, id_origin, seq_num):
+        super(Exibidor, self).handle_ok(id_origin, seq_num)
+
+    def handle_erro(self):
+        super(Exibidor, self).handle_erro()
+
+    def handle_flw(self):
+        super(Exibidor, self).handle_flw()
+
+    def handle_msg(self, id_origin, data):
+        # TODO: o emissor vai printar a mensagem na tela?
+        # TODO: se o DATA tiver mais dados? while True?
+        if id_origin == SERVER_ID:
+            print_green(data[self.head_struct.size:].decode('ascii'), end="")
+        else:
+            print_green('[id:' + str(id_origin) + ']> ' + data[self.head_struct.size:].decode('ascii'), end="") # DEBUG purpose
+
+    def handle_creq(self, header):
+        super(Exibidor, self).handle_creq(header)
+
+    def handle_clist(self, data):
+        super(Exibidor, self).handle_creq(data)
 
     def start(self):
         # TODO: make dynamic input od if . Example: 0
@@ -60,7 +47,7 @@ class Exibidor(Client):
             sys.exit()
 
         while True:
-            socket_list = [sys.stdin, self.sock]
+            socket_list = [self.sock]
 
             # Get the list sockets which are readable
             read_sockets, write_sockets, error_sockets = select.select(socket_list , [], [])
@@ -73,17 +60,6 @@ class Exibidor(Client):
                         print_blue('\nDisconnected from chat server')
                         sys.exit()
                     self.manage_header(data)
-                elif sock == sys.stdin:
-                    command = sys.stdin.readline()
-                    if command[:-1] == 'help':
-                        # TODO: Do a help message
-                        pass
-                    elif command[:-1] == 'status':
-                        print_green('ID: ' + str(self.id))
-                        print_green('socket_list: ' + str(socket_list))
-                    elif command[:-1] == 'exit':
-                        # TODO: send FLW to all clients
-                        sys.exit()
 
 def main(args):
     if(len(args) < 3) :

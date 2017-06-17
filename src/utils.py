@@ -14,6 +14,8 @@ import operator
 # DEBUG purpose
 import pprint
 
+import time
+
 # keep it as an exponent of 2
 RECV_BUFFER = 4096
 SERVER_ID = 2**16-1
@@ -80,3 +82,11 @@ def print_error(msg, end=None):
 		print(bcolors.FAIL + str(msg) + bcolors.ENDC)
 	else:
 		print(bcolors.FAIL + str(msg) + bcolors.ENDC, end=end)
+
+def prompt(s):
+	# string expected
+	if s is not str:
+		print_error(str(s) + ' is not a string')
+		return False
+	sys.stdout.write(s)
+	sys.stdout.flush()

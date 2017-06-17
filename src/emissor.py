@@ -13,41 +13,25 @@ class Emissor(Client):
         return super(Emissor, self).received_data(self.sock)
 
     def manage_header(self, data):
-        what_type, id_origin, id_destiny, seq_num = self.extract_header(data)
+        super(Emissor, self).manage_header(data)
 
-        #if it's not for you, ignore
-        if id_destiny != self.id and self.id != 0:
-            print_warning('Message not for you')
-            print_warning('id_destiny: ' + str(id_destiny))
-            print_warning('Remember who you are ' + str(self.id))
-        elif what_type == msg_type.OK:
-            print_warning('Receive OK from: ' + str(id_origin))
-            print_warning('Seq number: ' + str(seq_num))
-        elif what_type == msg_type.ERRO:
-            print_error('ERRO returned from server')
-            # TODO: what to do?
-        elif what_type == msg_type.FLW:
-            # Aqui ele recebe o FLW do servidor, manda o OK de volta e fecha conexão
-            print_blue('FLW received from server')
-            # TODO: check message seq, now set to zero for XGH
-            self.send_data((msg_type.OK, self.id, SERVER_ID, 0))
-            sys.exit()
-        elif what_type == msg_type.MSG:
-            # Recebe uma mensagem e printa na tela
-            # TODO: o emissor vai printar a mensagem na tela?
-            # TODO: se o DATA tiver mais dados? while True?
-            pass
-        elif what_type == msg_type.CREQ:
-            print_error('Wrong request CREQ, this is not for me!')
-            print_error(header)
-            sys.exit()
-        elif what_type == msg_type.CLIST:
-            # TODO: o emissor vai printar a mensagem na tela?
-            # TODO: se o DATA tiver mais dados? while True?
-            data = self.receive_data()
-            print(data)
-            # O cliente deve mandar uma mensgem de volta com OK
-            self.send_data((msg_type.CLIST, self.id, SERVER_ID, 0), 'OK')
+    def handle_ok(self, id_origin, seq_num):
+        super(Exibidor, self).handle_ok(id_origin, seq_num)
+
+    def handle_erro(self):
+        super(Exibidor, self).handle_erro()
+
+    def handle_flw(self):
+        super(Exibidor, self).handle_flw()
+
+    def handle_msg(self, id_origin, data):
+        super(Exibidor, self).handle_msg(id_origin, data)
+
+    def handle_creq(self, header):
+        super(Exibidor, self).handle_creq(header)
+
+    def handle_clist(self, data):
+        super(Exibidor, self).handle_creq(data)
 
     def start(self):
         # TODO: make dynamic input od if . Example: 2**12
@@ -55,8 +39,6 @@ class Emissor(Client):
             print_blue('Connected to remote host.')
         else:
             return False
-
-        self.prompt()
 
         while True:
             socket_list = [sys.stdin, self.sock]
@@ -73,15 +55,19 @@ class Emissor(Client):
                         sys.exit()
                     self.manage_header(data)
 
-                #user entered a message
-                else :
+                elif sock == sys.stdin:
                     msg = sys.stdin.readline()
-                    self.send_data((msg_type.MSG, self.id, SERVER_ID, 0), msg)
-                    self.prompt()
-
-    def prompt(self):
-        sys.stdout.write('<Me> ')
-        sys.stdout.flush()
+                    if msg[:-1] == '/help':
+                        # TODO: Do a help message
+                        pass
+                    elif msg[:-1] == '/status':
+                        print_green('ID: ' + str(self.id))
+                        print_green('socket_list: ' + str(socket_list))
+                    elif msg[:-1] == '/exit':
+                        # TODO: send FLW to all clients
+                        sys.exit()
+                    else:
+                        self.send_data((msg_type.MSG, self.id, SERVER_ID, 0), msg)
 
 def main(args):
     if(len(args) < 3) :

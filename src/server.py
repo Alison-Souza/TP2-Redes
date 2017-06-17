@@ -237,7 +237,7 @@ class Server:
             print_bold(b.raw)
             sock.send(b)
         except:
-            print_error('Deu merda em send_data')
+            print_error('Deu shit em send_data')
             raise
 
     # To the all things
@@ -268,17 +268,19 @@ class Server:
                 # do a command to server
                 elif sock == sys.stdin:
                     command = sys.stdin.readline()
-                    if command[:-1] == 'help':
-                        # TODO: Do a help message
-                        pass
-                    elif command[:-1] == 'status':
+                    if command[:-1] == '/help':
+                        print_green('Server Chat:\nUse one of commands below')
+                        print_green('  /status\t-- Show ids and connections in active')
+                        print_green('  /quit\t-- Exit')
+                        print_green('  /list\t-- print all connections')
+                    elif command[:-1] == '/status':
                         for conn in self.connections:
                             print_green(str(conn.getId()) + str(conn.getConnections()))
-                    elif command[:-1] == 'exit':
+                    elif command[:-1] == '/quit':
                         sys.exit()
-                    elif command[:-1] == 'list':
+                    elif command[:-1] == '/list':
                         # TODO: show a list of connections
-                        print(self.connections)
+                        print_green(self.connections)
 
                 #Some incoming message from a client
                 else:
@@ -307,7 +309,6 @@ class Server:
                         print_error(str(sock.getpeername()) + ' ' + data, end="")
                     elif head == msg_type.OI:
                         print_error('Impossible situation!\nPray for modern gods of internet!')
-                        # Tem alguma coisa dando muito errado ai
                     elif head == msg_type.FLW:
                         print_warning('send FLW for everyone')
                         # TODO: send FLW to everyone and wait OK
