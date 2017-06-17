@@ -308,9 +308,9 @@ class Server:
                     elif head == msg_type.OI:
                         print_error('Impossible situation!\nPray for modern gods of internet!')
                     elif head == msg_type.FLW:
+                        # receive FLW from client and send OK
                         self.send_data(msg_type.OK, SERVER_ID, id_origin, 0)
-                        print_warning('send FLW for client')
-                        # TODO: send FLW to client and wait OK
+                        print_warning('receive FLW for client')
                     elif head == msg_type.MSG:
                         # Receive message
                         data = data[self.head_struct.size:].decode('ascii')
@@ -325,13 +325,23 @@ class Server:
                                         print_blue('Trying to send message from ' + str(id_origin) + ' to ' + str(who_to_send))
                                         self.send_data((msg_type.MSG, id_origin, who_to_send, 0), self.getSockById(who_to_send), data)
                                         # TODO: wait OK?
+                                        # Esse WHO_TO_SEND é pra broadcast?
+                                        # Porque no cabeçalho, tem o id_destiny, que é o destino da mensagem.
                                     break
                         else:
                             continue
                     elif head == msg_type.CREQ:
+                        if id_destiny == 0:
+                            # TODO: broadcast
+                        else:
+                            # SEND CLIST
+                            # self.send_data((msg_type.CLIST, SERVER_ID, id_destiny, 0) self.getSockById(id_destiny), CLIST)
                         pass
                     elif head == msg_type.CLIST:
                         # uma chatice, leia documentacao, no final o cliente responde OK
+                        # Seria algo como mandar a lista do /status pro cliente que chamou CREQ
+                        # Na verdade, isso aqui não faz nada, pois o servidor não recebe essa
+                        # mensagem, apenas os clientes.
                         pass
 
 
