@@ -10,6 +10,17 @@ class Client:
         return self.id
 
     def __del__(self):
+        self.send_data(msg_type.FLW, self.id, SERVER_ID, 0)
+        while(True):
+            try:
+                data = self.receive_data(RECV_BUFFER)
+            except:
+                continue
+            header = self.extract_header(data)
+            if header[0] != msg_type.OK:
+                continue
+            else:
+                break
         self.sock.close()
         print_error('Client died!')
 

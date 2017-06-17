@@ -162,10 +162,12 @@ class Server:
         elif 0 < id_origin < 2**12: # is Emitter
             # Useless because don't associate a Exhibitor
             print_blue('New Emitter tring to connect')
-            conn = Connection(id_origin, addr, sockfd, client_type.EMISSOR)
+            id = self.getAvailableId(1)
+            conn = Connection(id, addr, sockfd, client_type.EMISSOR)
             self.connections.append(conn)
             ret[0] = msg_type.OK
-            ret[2] = id_origin
+            ret[1] = SERVER_ID
+            ret[2] = id
         elif 2**12 <= id_origin < 2**13 - 1: # is Emitter
             print_blue('New Emitter tring to connect')
             sock = self.getSockById(id_origin)
@@ -306,8 +308,9 @@ class Server:
                     elif head == msg_type.OI:
                         print_error('Impossible situation!\nPray for modern gods of internet!')
                     elif head == msg_type.FLW:
-                        print_warning('send FLW for everyone')
-                        # TODO: send FLW to everyone and wait OK
+                        self.send_data(msg_type.OK, SERVER_ID, id_origin, 0)
+                        print_warning('send FLW for client')
+                        # TODO: send FLW to client and wait OK
                     elif head == msg_type.MSG:
                         # Receive message
                         data = data[self.head_struct.size:].decode('ascii')
