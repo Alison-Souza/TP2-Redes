@@ -62,7 +62,7 @@ class Exibidor(Client):
                     self.manage_header(data)
 
 def main(args):
-    if(len(args) < 3) :
+    if(len(args) < 3):
         print('Usage : python exibidor.py <hostname> <port>')
         sys.exit()
 

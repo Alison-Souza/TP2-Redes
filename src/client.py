@@ -112,7 +112,6 @@ class Client:
         print_blue('FLW received from server')
         # TODO: check message seq, now set to zero for XGH
         self.send_data((msg_type.OK, self.id, SERVER_ID, 0))
-        time.sleep(2)
         sys.exit()
 
     def handle_msg(self, id_origin, data):

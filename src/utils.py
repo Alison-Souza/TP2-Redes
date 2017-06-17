@@ -33,6 +33,10 @@ class msg_type:
 	CREQ = 6
 	CLIST = 7
 
+class client_type:
+	EMISSOR = 1
+	EXIBIDOR = 2
+
 # colorized output
 class bcolors:
 	HEADER = '\033[95m'

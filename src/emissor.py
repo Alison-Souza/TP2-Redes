@@ -8,6 +8,7 @@ class Emissor(Client):
         self.host = kwargs.get('host', '127.0.0.1')
         self.port = kwargs.get('port', 5000)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.exibidor_id = kwargs.get('exibidor_id', 2**12)
 
     def received_data(self):
         return super(Emissor, self).received_data(self.sock)
@@ -34,8 +35,7 @@ class Emissor(Client):
         super(Exibidor, self).handle_creq(data)
 
     def start(self):
-        # TODO: make dynamic input od if . Example: 2**12
-        if self.try_connect(2**12) is not None:
+        if self.try_connect(self.exibidor) is not None:
             print_blue('Connected to remote host.')
         else:
             return False
@@ -71,13 +71,17 @@ class Emissor(Client):
 
 def main(args):
     if(len(args) < 3) :
-        print('Usage : python emissor.py <hostname> <port>')
+        print('Usage : python emissor.py <hostname> <port> <exibidor_id>')
         sys.exit()
 
     host = args[1]
     port = int(args[2])
+    if len(args >= 3):
+        exibidor_id = int(args[3])
+        emissor = Emissor(host=host, port=port, exibidor_id=exibidor_id)
+    else:
+        emissor = Emissor(host=host, port=port)
 
-    emissor = Emissor(host=host, port=port)
     emissor.start()
 
 
