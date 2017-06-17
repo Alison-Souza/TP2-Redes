@@ -3,7 +3,7 @@
 from utils import *
 
 class Connection:
-    def __init__(self, id, addr, sock, type_client):
+    def __init__(self, id, addr, sock, tclient):
         # id of client
         self.id = id
         # set connections
@@ -13,8 +13,8 @@ class Connection:
         # sock module
         self.sock = sock
         # 2^(12)-1 and 2^(13)-1 for exibidor
-        # 'ex' 'em'
-        self.type = type_client
+        # client_type.EMISSOR or client_type.EXIBIDOR
+        self.type = tclient
 
     def getId(self):
         return self.id
@@ -54,16 +54,12 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind(("0.0.0.0", self.port))
-        self.server_socket.listen(10)
+        self.server_socket.listen()
         # Add server socket to the list of readable connections
         self.connections = []
-        '''
-        Tipo de Mensagem, ID de origem, ID de destino, Numero de sequencia
-        '''
+        # Tipo de Mensagem, ID de origem, ID de destino, Numero de sequencia
         self.head_struct = struct.Struct('! H H H H')
-
         # dict to store who can send message to who
-        self.graph = dict()
 
     def __del__(self):
         print_blue('Sendind FLW to all clients!')
@@ -158,7 +154,7 @@ class Server:
         if id_origin == 0: # is Exhibitor
             print_blue('New Exhibitor tring to connect')
             id = self.getAvailableId(2**12)
-            conn = Connection(id, addr, sockfd, 'ex')
+            conn = Connection(id, addr, sockfd, client_type.EXIBIDOR)
             self.connections.append(conn)
             ret[0] = msg_type.OK
             ret[1] = SERVER_ID
@@ -166,7 +162,7 @@ class Server:
         elif 0 < id_origin < 2**12: # is Emitter
             # Useless because don't associate a Exhibitor
             print_blue('New Emitter tring to connect')
-            conn = Connection(id_origin, addr, sockfd, 'em')
+            conn = Connection(id_origin, addr, sockfd, client_type.EMISSOR)
             self.connections.append(conn)
             ret[0] = msg_type.OK
             ret[2] = id_origin
@@ -177,10 +173,10 @@ class Server:
                 ret[0] = msg_type.OK
                 ret[1] = SERVER_ID
                 ret[2] = self.getAvailableId(1)
-                conn = Connection(ret[2], addr, sockfd, 'em')
+                conn = Connection(ret[2], addr, sockfd, client_type.EMISSOR)
                 self.connections.append(conn)
                 conn.addConnection(id_origin)
-                message = '**** User ' +str(ret[2]) + ' connected to chat\n'
+                message = '**** User ' + str(ret[2]) + ' connected to chat\n'
                 self.send_data((msg_type.MSG, SERVER_ID, self.getIdBySock(sock), 0), sock, message)
             else:
                 ret[0] = msg_type.ERRO
@@ -237,7 +233,7 @@ class Server:
             print_bold(b.raw)
             sock.send(b)
         except:
-            print_error('Deu merda em send_data')
+            print_error('Deu shit em send_data')
             raise
 
     # To the all things
@@ -268,17 +264,19 @@ class Server:
                 # do a command to server
                 elif sock == sys.stdin:
                     command = sys.stdin.readline()
-                    if command[:-1] == 'help':
-                        # TODO: Do a help message
-                        pass
-                    elif command[:-1] == 'status':
+                    if command[:-1] == '/help':
+                        print_green('Server Chat:\nUse one of commands below')
+                        print_green('  /status\t-- Show ids and connections in active')
+                        print_green('  /quit\t-- Exit')
+                        print_green('  /list\t-- print all connections')
+                    elif command[:-1] == '/status':
                         for conn in self.connections:
-                            print_green(str(conn.getId()) + str(conn.getConnections()))
-                    elif command[:-1] == 'exit':
+                            print_green(str(conn.getId()) + ' --> ' + str(conn.getConnections()))
+                    elif command[:-1] == '/quit':
                         sys.exit()
-                    elif command[:-1] == 'list':
+                    elif command[:-1] == '/list':
                         # TODO: show a list of connections
-                        print(self.connections)
+                        print_green(self.connections)
 
                 #Some incoming message from a client
                 else:
@@ -288,7 +286,7 @@ class Server:
 
                     header = self.extract_header(data)
                     # Remove socket if send nothing
-                    if header is None:
+                    if header is None or len(header) < 4:
                         print_warning('header is None, why?')
                         aux_id = self.getIdBySock(sock)
                         self.removeSock(sock)
@@ -307,7 +305,6 @@ class Server:
                         print_error(str(sock.getpeername()) + ' ' + data, end="")
                     elif head == msg_type.OI:
                         print_error('Impossible situation!\nPray for modern gods of internet!')
-                        # Tem alguma coisa dando muito errado ai
                     elif head == msg_type.FLW:
                         print_warning('send FLW for everyone')
                         # TODO: send FLW to everyone and wait OK
