@@ -2,6 +2,11 @@
 
 from utils import *
 
+'''
+**************************************************************************
+Classe da conexão com o servidor, ele é destinado a guardar informações
+sobre a conexão do servidor com o cliente
+'''
 class Connection:
     def __init__(self, id, addr, sock, tclient):
         # id of client
@@ -16,6 +21,9 @@ class Connection:
         # client_type.EMISSOR or client_type.EXIBIDOR
         self.type = tclient
 
+    '''
+    Métodos get/set
+    '''
     def get_id(self):
         return self.id
 
@@ -26,9 +34,11 @@ class Connection:
 
     # Store of ids to exhibitors
     # Adiciona emissor ou exibidor
+    # É esperado que o emissor se conete apenas a um exibidor
     def set_connection(self, x):
-        if x is not int:
-            print_error('Int expected but received ' + str(x))
+        if not isinstance( x, int ):
+            print_error('Int expected but received ' + str(type(x)) + str(x))
+            return
         self.con = x
 
     def get_addr(self):
@@ -45,6 +55,10 @@ class Connection:
         self.sock.close()
         print_error('Connection died!')
 
+'''
+**************************************************************************
+Classe do servidor de mensagens
+'''
 class Server:
     def __init__(self, port):
         self.port = port
@@ -92,7 +106,7 @@ class Server:
                     return True
         else: # it's a sock object
             for conn in self.connections:
-                if param == conn.getSock():
+                if param == conn.get_sock():
                     print_warning('Remove:', end=" ")
                     print_warning(conn.get_id())
                     self.connections.remove(conn)
@@ -119,9 +133,9 @@ class Server:
             return index
 
     # Recebe e retorna o dado do socket
-    def receive_data(self, sock):
+    def receive_data(self, sock, size):
         try:
-            data = sock.recv(RECV_BUFFER)
+            data = sock.recv(size)
         except:
             # TODO: check which is correct
             # addr = sock.getpeername()
@@ -270,74 +284,147 @@ class Server:
             # Toda as mensagens tem que ter um OK. O envio de uma mensagem de
             # OK nao incrementa o numero de sequencia das mensagens do cliente (mensagens de OK nao tem
             # numero de sequencia proprio
-            self.handle_ok()
+            self.handle_ok(sock, id_origin, id_destiny, seq_num)
         elif head == msg_type.ERRO:
             # igual ao OK mas indicando que alguma coisa deu errado
             self.handle_erro(sock)
         elif head == msg_type.FLW:
             self.handle_flw(sock)
         elif head == msg_type.MSG:
-            self.handle_msg(sock)
+            self.handle_msg(sock, id_origin, id_destiny, seq_num)
         elif head == msg_type.CREQ:
-            pass
+            self.handle_creq(id_origin, id_destiny)
         elif head == msg_type.CLIST:
-            # uma chatice, leia documentacao, no final o cliente responde OK
             pass
         else:
             print_error('Impossible situation!\nPray for modern gods of internet!')
             print_error('Type: ' + str(what_type))
             return
 
-    def handle_ok(self):
-        print_warning('Receive OK from: ' + str(id_origin))
-        print_warning('Seq number: ' + str(seq_num))
+    def handle_ok(self, sock, id_origin, id_destiny, seq_num):
+        if id_destiny != SERVER_ID:
+            try:
+                header = (msg_type.OK, id_origin, id_destiny, seq_num)
+                for conn in self.connections:
+                    if conn.get_sock() == sock:
+                        continue
+                    self.send_data(conn.get_sock(), header)
+            except Exception as e:
+                raise
 
     def handle_erro(self, sock):
-        print_error(str(sock.getpeername()) + ' ' + data, end="")
-        # TODO: Esse erro tem que tratar todos os casos
-        # erro no OI, MSG, etc
+        pass
 
     def handle_flw(self, sock):
-        print_blue('Send OK from FLW back to client')
-        self.send_data(sock, (msg_type.OK, SERVER_ID, self.get_sock_by_id(sock), 0))
-        time.sleep(5)
+        header = (msg_type.OK, SERVER_ID, self.get_id_by_sock(sock), 0)
+        self.send_data(sock, header)
         self.remove_sock(sock)
 
-    def handle_msg(self, sock):
-        print_error('MSG received from '+ str(id_origin) + ', it\'s not for me!')
-        # Receive message
-        data = data[self.head_struct.size:].decode('ascii')
-        # TODO: while true for read more messages?
+    def handle_msg(self, sock, id_origin, id_destiny, seq_num):
+        struct_H = struct.Struct('! H')
+        try:
+            length = struct_H.unpack(self.receive_data(sock, struct_H.size))[0]
+            print_bold(length)
+            struct_aux = struct.Struct('! ' + str(length) + 's')
+            data = self.receive_data(sock, struct_aux.size)
+        except Exception as e:
+            raise
+
         if data:
-            print_blue(str(sock.getpeername()) + ' ' + data, end="") # DEBUG purpose
-            for conn in self.connections:
-                if conn == self.server_socket:
-                    continue
-                if conn.get_id() == id_origin:
-                    for who_to_send in conn.getConnections():
-                        print_blue('Trying to send message from ' + str(id_origin) + ' to ' + str(who_to_send))
-                        self.send_data((msg_type.MSG, id_origin, who_to_send, 0), self.get_sock_by_id(who_to_send), data)
-                        # TODO: wait OK?
-                    break
+            data = struct_aux.unpack(data)[0].decode('ascii')
+            print_bold(data)
+            if id_destiny == 0:
+                # Broadcast
+                for conn in self.connections:
+                    try:
+                        if conn.get_id() == id_origin:
+                            continue
+
+                        if conn.get_type() == client_type.EXIBIDOR:
+                            header = (msg_type.MSG, id_origin, conn.get_id(), seq_num)
+                            self.send_data(conn.get_sock(), header, data)
+                    except:
+                        raise
+            else:
+                for conn in self.connections:
+                    if conn.get_sock() == self.get_sock_by_id(id_destiny):
+                        try:
+                            if conn.get_id() == id_destiny:
+                                header = (msg_type.MSG, id_origin, id_destiny, seq_num)
+                                self.send_data(conn.get_sock(), header, data)
+                        except:
+                            raise
         else:
             return
 
-    def handle_creq(self, header):
-        print_error('Wrong request CREQ, this is not for me!')
-        print_error(header)
-        sys.exit()
+    def handle_creq(self, id_origin, id_destiny):
+        how_many_conn = len(self.connections)
+        if how_many_conn is None:
+            return None
+
+        struct_desc = '! H H H H H' + str(how_many_conn) + 'H'
+        struct_aux = struct.Struct(struct_desc)
+        b = ctypes.create_string_buffer(struct_aux.size)
+
+        if id_destiny == 0:
+            # Broadcast
+            header = [msg_type.CLIST, SERVER_ID, 0, 0]
+            data = header + [how_many_conn]
+            for conn in self.connections:
+                data.append(conn.get_id())
+
+            for conn in self.connections:
+                if conn.get_type() == client_type.EXIBIDOR:
+                    data[2] = conn.get_id()
+                    data_aux = tuple(data)
+                    struct_aux.pack_into(b, 0, *data_aux)
+                    print_bold(b.raw)
+                    try:
+                        conn.get_sock().send(b)
+                    except Exception as e:
+                        print_error('Erro in trying to send data')
+                        raise
+        else:
+            for conn in self.connections:
+                if conn.get_id() == id_destiny:
+                    id_printer = conn.get_connection()
+                    break
+            header = [msg_type.CLIST, SERVER_ID, id_printer, 0]
+            data = header + [how_many_conn]
+            sock = None
+            for conn in self.connections:
+                data.append(conn.get_id())
+                if id_printer == conn.get_id():
+                    sock = conn.get_sock()
+            if sock is None:
+                return None
+            data = tuple(data)
+            struct_aux.pack_into(b, 0, *data)
+            print_bold(b.raw)
+            try:
+                sock.send(b)
+            except Exception as e:
+                print_error('Erro in trying to send data')
+                raise
 
     def handle_clist(self, data):
-        '''
-        Essa mensagem possui um inteiro (2 bytes) indicando numero de clientes conectados, ´
-        N. A mensagem CLIST possui tambem uma lista de ´ N inteiros (2 bytes cada) que armazena os
-        identificadores de cada cliente (exibidor e emissor) conectador ao sistema.
-        '''
-        # TODO: o emissor vai printar a mensagem na tela?
-        # TODO: se o DATA tiver mais dados? while True?
-        print_green(data[self.head_struct.size:].decode('ascii'), end="")
-        # O cliente deve mandar uma mensgem de volta com OK
-        self.send_data((msg_type.CLIST, self.id, SERVER_ID, 0), 'OK')
+        # '''
+        # Essa mensagem possui um inteiro (2 bytes) indicando numero de clientes conectados, ´
+        # N. A mensagem CLIST possui tambem uma lista de ´ N inteiros (2 bytes cada) que armazena os
+        # identificadores de cada cliente (exibidor e emissor) conectador ao sistema.
+        # '''
+        # # TODO: o emissor vai printar a mensagem na tela?
+        # # TODO: se o DATA tiver mais dados? while True?
+        # print_green(data[self.head_struct.size:].decode('ascii'), end="")
+        # # O cliente deve mandar uma mensgem de volta com OK
+        # self.send_data((msg_type.CLIST, self.id, SERVER_ID, 0), 'OK')
+        pass
+
+    def get_connections(self):
+        connections_list = []
+        for conn in self.connections:
+            connections_list += [conn.get_sock()]
+        return connections_list
 
     # To the all things
     def start(self):
@@ -345,11 +432,9 @@ class Server:
         print_header('It\'s dangerous to go outise,')
         print_header('type \'/help\' for more.')
 
-        connections_list = [self.server_socket]
-
         while True:
             # add input fd for commands purpose
-            socket_list = [sys.stdin] + connections_list
+            socket_list = [sys.stdin, self.server_socket] + self.get_connections()
 
             # stuck in here until a fd is ready
             try:
@@ -364,8 +449,6 @@ class Server:
                 if sock == self.server_socket:
                     # expect type OI message
                     new_sock = self.new_connection()
-                    if new_sock is not None:
-                        connections_list.append(new_sock)
                 # do a command to server
                 elif sock == sys.stdin:
                     self.get_command_from_stdin()

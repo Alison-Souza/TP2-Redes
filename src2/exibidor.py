@@ -12,8 +12,10 @@ class Exibidor(Client):
     def receive_header(self):
         return super(Exibidor, self).receive_header()
 
-    # def handle_ok(self, id_origin, seq_num):
-    #     super(Exibidor, self).handle_ok(id_origin, seq_num)
+    def handle_ok(self, id_origin, seq_num):
+        print_warning('Receive OK from: ' + str(id_origin))
+        print_warning('Seq number: ' + str(seq_num))
+        self.seq_num += 1
     #
     # def handle_erro(self):
     #     super(Exibidor, self).handle_erro()
@@ -23,25 +25,44 @@ class Exibidor(Client):
 
     def handle_msg(self, id_origin, seq_num):
         try:
-            length = struct.Struct('! H').unpack(self.receive_data(struct.Struct('! H').size))
+            length = struct.Struct('! H').unpack(self.receive_data(struct.Struct('! H').size))[0]
             struct_string = struct.Struct('! ' + str(length) + 's')
-            data = struct_string.unpack(self.receive_data(struct_string.size))
+            data = struct_string.unpack(self.receive_data(struct_string.size))[0]
         except:
             print_error('Error in receive message')
             raise
         if id_origin == SERVER_ID:
             print_green(data.decode('ascii'), end="")
         else:
-            print_green('[id:' + str(id_origin) + ']> ' + data.decode('ascii'), end="") # DEBUG purpose
+            print_bold(data)
+            print_green('[id:' + str(id_origin) +'(' + str(seq_num) + ')]> ' + data.decode('ascii'), end="") # DEBUG purpose
+
+        # send OK back to emissor
+        try:
+            header = (msg_type.OK, self.id, id_origin, seq_num)
+            self.send_data(header)
+        except:
+            print_error('Error in send OK')
+            raise
 
     # def handle_creq(self, header):
     #     super(Exibidor, self).handle_creq(header)
 
-    # def handle_clist(self, data):
-    #     super(Exibidor, self).handle_creq(data)
+    def handle_clist(self):
+        struct_H = struct.Struct('! H')
+        result = self.receive_data(struct_H.size)
+        length = struct_H.unpack(result)[0]
+        if length > 0:
+            struct_aux = struct.Struct('! ' + str(length) + 'H')
+            result = self.receive_data(struct_aux.size)
+            data = struct_aux.unpack(result)
+        print_blue('Connection IDs:')
+        for x in list(data):
+            print_blue(x)
 
     def start(self):
-        # TODO: make dynamic input od if . Example: 0
+        # clear screen
+        print('\033c')
         if self.connect(0):
             print_blue('Connected to remote host.')
         else:
@@ -83,8 +104,7 @@ class Exibidor(Client):
             elif what_type == msg_type.CREQ:
                 pass
             elif what_type == msg_type.CLIST:
-                # uma chatice, leia documentacao, no final o cliente responde OK
-                pass
+                self.handle_clist()
             else:
                 print_error('Impossible situation!\nPray for modern gods of internet!')
                 print_error('Type: ' + str(what_type))
@@ -101,6 +121,10 @@ def main(args):
     exibidor = Exibidor(host=host, port=port)
     exibidor.start()
 
+def test():
+    exibidor = Exibidor()
+    exibidor.start()
 
 if __name__ == "__main__":
-    main(sys.argv)
+    # main(sys.argv)
+    test()

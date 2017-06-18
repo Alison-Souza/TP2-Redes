@@ -15,16 +15,11 @@ import pprint
 # for timeout
 import time
 
-
-
-# keep it as an exponent of 2
-# TODO: Remove this support
-RECV_BUFFER = 4096
 # 2**16-1
 SERVER_ID = 65535
 
 # DEBUG
-DEBUG = True
+DEBUG = False
 
 class client_type:
 	EMISSOR = 1
