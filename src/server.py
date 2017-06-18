@@ -162,10 +162,12 @@ class Server:
         elif 0 < id_origin < 2**12: # is Emitter
             # Useless because don't associate a Exhibitor
             print_blue('New Emitter tring to connect')
-            conn = Connection(id_origin, addr, sockfd, client_type.EMISSOR)
+            id = self.getAvailableId(1)
+            conn = Connection(id, addr, sockfd, client_type.EMISSOR)
             self.connections.append(conn)
             ret[0] = msg_type.OK
-            ret[2] = id_origin
+            ret[1] = SERVER_ID
+            ret[2] = id
         elif 2**12 <= id_origin < 2**13 - 1: # is Emitter
             print_blue('New Emitter tring to connect')
             sock = self.getSockById(id_origin)
@@ -306,8 +308,9 @@ class Server:
                     elif head == msg_type.OI:
                         print_error('Impossible situation!\nPray for modern gods of internet!')
                     elif head == msg_type.FLW:
-                        print_warning('send FLW for everyone')
-                        # TODO: send FLW to everyone and wait OK
+                        # receive FLW from client and send OK
+                        self.send_data(msg_type.OK, SERVER_ID, id_origin, 0)
+                        print_warning('receive FLW for client')
                     elif head == msg_type.MSG:
                         # Receive message
                         data = data[self.head_struct.size:].decode('ascii')
@@ -322,13 +325,23 @@ class Server:
                                         print_blue('Trying to send message from ' + str(id_origin) + ' to ' + str(who_to_send))
                                         self.send_data((msg_type.MSG, id_origin, who_to_send, 0), self.getSockById(who_to_send), data)
                                         # TODO: wait OK?
+                                        # Esse WHO_TO_SEND é pra broadcast?
+                                        # Porque no cabeçalho, tem o id_destiny, que é o destino da mensagem.
                                     break
                         else:
                             continue
                     elif head == msg_type.CREQ:
+                        if id_destiny == 0:
+                            # TODO: broadcast
+                        else:
+                            # SEND CLIST
+                            # self.send_data((msg_type.CLIST, SERVER_ID, id_destiny, 0) self.getSockById(id_destiny), CLIST)
                         pass
                     elif head == msg_type.CLIST:
                         # uma chatice, leia documentacao, no final o cliente responde OK
+                        # Seria algo como mandar a lista do /status pro cliente que chamou CREQ
+                        # Na verdade, isso aqui não faz nada, pois o servidor não recebe essa
+                        # mensagem, apenas os clientes.
                         pass
 
 
