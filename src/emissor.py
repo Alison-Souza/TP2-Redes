@@ -81,7 +81,6 @@ class Emissor(Client):
                         except Exception as e:
                             raise
                     elif msg[:-1] == '/quit':
-                        # TODO: how to find my Exibidor to send FLW?
                         sys.exit()
                     else:
                         if msg.find("/msg") == 0 and len(msg.split(" ")) > 2:

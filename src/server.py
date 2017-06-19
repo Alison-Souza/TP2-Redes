@@ -259,9 +259,14 @@ class Server:
                 conn = Connection(ret[2], addr, new_sock, client_type.EMISSOR)
                 self.connections.append(conn)
                 conn.set_connection(id_origin)
-                # TODO: Esta mensagem tem que ser mandada por broadcast
-                # message = '**** User ' + str(ret[2]) + ' connected to chat\n'
-                # self.send_data(sock, (msg_type.MSG, SERVER_ID, self.get_id_by_sock(sock), 0), message)
+                message = '**** User ' + str(ret[2]) + ' connected to chat\n'
+                for conn in self.connections:
+                    try:
+                        if conn.get_type() == client_type.EXIBIDOR:
+                            header = (msg_type.MSG, SERVER_ID, conn.get_id(), 0)
+                            self.send_data(conn.get_sock(), header, message)
+                    except:
+                        raise
             else:
                 ret[0] = msg_type.ERRO
                 ret[1] = SERVER_ID
