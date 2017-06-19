@@ -1,5 +1,3 @@
-# From Python 2.6 you can import the print function from Python 3:
-from __future__ import print_function
 import socket
 import select
 import sys
@@ -11,17 +9,21 @@ import ctypes
 # sort list with attribute
 import operator
 
-# DEBUG purpose
+# cosmetic print
 import pprint
 
+# for timeout
 import time
 
-# keep it as an exponent of 2
-RECV_BUFFER = 4096
-SERVER_ID = 2**16-1
+# 2**16-1
+SERVER_ID = 65535
 
 # DEBUG
 DEBUG = False
+
+class client_type:
+	EMISSOR = 1
+	EXIBIDOR = 2
 
 # messages type
 class msg_type:
@@ -32,10 +34,6 @@ class msg_type:
 	MSG = 5
 	CREQ = 6
 	CLIST = 7
-
-class client_type:
-	EMISSOR = 1
-	EXIBIDOR = 2
 
 # colorized output
 class bcolors:
@@ -48,6 +46,21 @@ class bcolors:
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
 
+class Header:
+	struct = struct.Struct('! H H H H')
+
+def prompt(s):
+	# string expected
+	if s is not str:
+		print_error(str(s) + ' is not a string')
+		return False
+	sys.stdout.write(s)
+	sys.stdout.flush()
+
+'''
+Below are print with colors
+Most of they are used for DEBUG purpose
+'''
 def print_header(msg, end=None):
 	if end is None:
 		print(bcolors.HEADER + str(msg) + bcolors.ENDC)
@@ -86,11 +99,3 @@ def print_error(msg, end=None):
 		print(bcolors.FAIL + str(msg) + bcolors.ENDC)
 	else:
 		print(bcolors.FAIL + str(msg) + bcolors.ENDC, end=end)
-
-def prompt(s):
-	# string expected
-	if s is not str:
-		print_error(str(s) + ' is not a string')
-		return False
-	sys.stdout.write(s)
-	sys.stdout.flush()
