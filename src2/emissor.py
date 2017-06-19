@@ -2,6 +2,11 @@
 
 from client import *
 
+'''
+**************************************************************************
+Emissor, normalmente ele não imprime nada, só tem o papel de mandar
+mensagens via stdin
+'''
 class Emissor(Client):
     def __init__(self, host='127.0.0.1', port=5000, exibidor_id=2**12):
         super().__init__(host, port)
@@ -14,6 +19,10 @@ class Emissor(Client):
 
     def receive_header(self):
         return super(Emissor, self).receive_header()
+
+'''
+
+'''
 
     def handle_ok(self, id_origin, seq_num):
         print_warning('Receive OK from: ' + str(id_origin))

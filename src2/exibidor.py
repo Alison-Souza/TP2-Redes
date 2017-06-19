@@ -2,26 +2,24 @@
 
 from client import *
 
+'''
+**************************************************************************
+Exibidor. Tem como papel apenas imprimir mensagens na tela. Seria semelhante
+a tela do IRC sem a caixa de mensagem, que fica a cargo do Emissor.
+'''
 class Exibidor(Client):
     def __init__(self, host='127.0.0.1', port=5000):
         super(Exibidor, self).__init__(host, port)
 
-    def received_data(self):
-        return super(Exibidor, self).received_data()
-
-    def receive_header(self):
-        return super(Exibidor, self).receive_header()
-
+    """
+    Métodos handle_X
+    Servem executar comportamentos específicos se tal
+    mensagem é recebida
+    """
     def handle_ok(self, id_origin, seq_num):
         print_warning('Receive OK from: ' + str(id_origin))
         print_warning('Seq number: ' + str(seq_num))
         self.seq_num += 1
-    #
-    # def handle_erro(self):
-    #     super(Exibidor, self).handle_erro()
-    #
-    # def handle_flw(self):
-    #     super(Exibidor, self).handle_flw()
 
     def handle_msg(self, id_origin, seq_num):
         try:
@@ -44,9 +42,6 @@ class Exibidor(Client):
         except:
             print_error('Error in send OK')
             raise
-
-    # def handle_creq(self, header):
-    #     super(Exibidor, self).handle_creq(header)
 
     def handle_clist(self):
         struct_H = struct.Struct('! H')

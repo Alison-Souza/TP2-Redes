@@ -2,11 +2,12 @@
 
 from utils import *
 
-'''
+"""
 **************************************************************************
 Classe da conexão com o servidor, ele é destinado a guardar informações
-sobre a conexão do servidor com o cliente
-'''
+sobre a conexão do servidor com o cliente.
+O servidor guarda uma lista destas instâncias no atriuto "connections"
+"""
 class Connection:
     def __init__(self, id, addr, sock, tclient):
         # id of client
@@ -21,19 +22,15 @@ class Connection:
         # client_type.EMISSOR or client_type.EXIBIDOR
         self.type = tclient
 
-    '''
-    Métodos get/set
-    '''
     def get_id(self):
         return self.id
 
-    # Retorna todas as conexoes do servidor,
-    # contem uma lista de emissores e exibidores
+    # Retorna qual conexão está associado
+    # Na prática, só indica se um emissor está associado ao exibidor
     def get_connection(self):
         return self.con
 
-    # Store of ids to exhibitors
-    # Adiciona emissor ou exibidor
+    # Adiciona o id do exibidor
     # É esperado que o emissor se conete apenas a um exibidor
     def set_connection(self, x):
         if not isinstance( x, int ):
@@ -41,17 +38,22 @@ class Connection:
             return
         self.con = x
 
+    # Retorna informação (Endereço, porta) do socket.
+    # Intuito de DEBUG
     def get_addr(self):
         return self.sock.getsockname()
 
+    # Retorna o socket associado a um cliente (exibidor ou emissor)
     def get_sock(self):
         return self.sock
 
+    # Retorna o tipo do cliente, se exibidor ou emissor.
+    # Veja mais em utils.py -> class client_type
     def get_type(self):
         return self.type
 
+    # Fecha a conexão de qualquer jeito
     def __del__(self):
-        # if not close
         self.sock.close()
         print_error('Connection died!')
 
@@ -92,6 +94,13 @@ class Server:
                 return conn.get_id()
         print_error('Cannot get id by sock\n' + str(id))
         return None
+
+    # Retorna uma lista de instâncias de Connections possuído pelo servidor
+    def get_connections(self):
+        connections_list = []
+        for conn in self.connections:
+            connections_list += [conn.get_sock()]
+        return connections_list
 
     # Remove o cliente da lista passando o id ou socket
     def remove_sock(self, param):
@@ -137,13 +146,9 @@ class Server:
         try:
             data = sock.recv(size)
         except:
-            # TODO: check which is correct
-            # addr = sock.getpeername()
             addr = sock.getsockname()
-            # self.broadcast_data(sock, "Client (%s, %s) is offline" % addr)
             print("Client (%s, %s) is offline" % addr)
             sock.close()
-            # TODO: Remove from connected clients
             self.connections.remove(sock)
             return None
         return data
@@ -158,8 +163,6 @@ class Server:
             header = tuple(header)
         data = bytes(data, 'ascii')
         if len(data) > 0 or msg_type.MSG == header[0]:
-            # for MSG tem que passar o tamanho (int 2  bytes) da mensagem
-            # como quinto elemento da tupla
             header = (*header, len(data), data)
             struct_aux = struct.Struct('! H H H H H ' + str(len(data)) + 's')
         else:
@@ -174,6 +177,7 @@ class Server:
             return False
         return True
 
+    # Método que retorna uma quantidade de dados utilizando recv
     def receive_data(self, sock, size):
         print_warning('receive_data')
         try:
@@ -188,6 +192,7 @@ class Server:
             # sys.exit()
         return data
 
+    # retorna uma tupla de 4 inteiros de 16 bits
     def receive_header(self, sock):
         data = self.receive_data(sock, Header.struct.size)
         return Header.struct.unpack(data)
@@ -407,24 +412,6 @@ class Server:
                 print_error('Erro in trying to send data')
                 raise
 
-    def handle_clist(self, data):
-        # '''
-        # Essa mensagem possui um inteiro (2 bytes) indicando numero de clientes conectados, ´
-        # N. A mensagem CLIST possui tambem uma lista de ´ N inteiros (2 bytes cada) que armazena os
-        # identificadores de cada cliente (exibidor e emissor) conectador ao sistema.
-        # '''
-        # # TODO: o emissor vai printar a mensagem na tela?
-        # # TODO: se o DATA tiver mais dados? while True?
-        # print_green(data[self.head_struct.size:].decode('ascii'), end="")
-        # # O cliente deve mandar uma mensgem de volta com OK
-        # self.send_data((msg_type.CLIST, self.id, SERVER_ID, 0), 'OK')
-        pass
-
-    def get_connections(self):
-        connections_list = []
-        for conn in self.connections:
-            connections_list += [conn.get_sock()]
-        return connections_list
 
     # To the all things
     def start(self):
