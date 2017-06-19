@@ -80,17 +80,15 @@ class Emissor(Client):
                             self.send_data(header)
                         except Exception as e:
                             raise
-                    elif msg[:-1] == '/status':
-                        print_green('ID: ' + str(self.id))
-                        print_green('socket_list: ' + str(socket_list))
-                    elif msg[:-1] == '/exit':
+                    elif msg[:-1] == '/quit':
+                        # TODO: how to find my Exibidor to send FLW?
                         sys.exit()
                     else:
                         if msg.find("/msg") == 0 and len(msg.split(" ")) > 2:
                             id_to_send_private = int(msg.split(" ")[1])
                             msg_complete = str()
                             for x in msg.split(" ")[2:]:
-                                msg_complete += x
+                                msg_complete += x + ' '
                             self.send_data((msg_type.MSG, self.id, id_to_send_private, self.seq_num), msg_complete)
                         else:
                             # broadcast
@@ -120,5 +118,5 @@ def test(args):
     emissor.start()
 
 if __name__ == "__main__":
-    # main(sys.argv)
-    test(sys.argv)
+    main(sys.argv)
+    # test(sys.argv)

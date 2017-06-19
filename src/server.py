@@ -268,7 +268,6 @@ class Server:
         elif command[:-1] == '/quit':
             sys.exit()
         elif command[:-1] == '/list':
-            # TODO: Melhorar isso
             print_green('server.connections = ', end="")
             print_green(self.connections)
 

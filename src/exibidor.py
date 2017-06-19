@@ -61,7 +61,11 @@ class Exibidor(Client):
         if self.connect(0):
             print_blue('Connected to Server.')
             print_blue('Welcome to Server Chat.')
-            print_blue('\t/list -- ids connected from server')
+            print_blue('\t/list -- ids connected on server')
+            print_blue('\t/listb -- broadcast ids connected on server')
+            print_blue('\t/msg <id_user> <message> -- Send message in private')
+            print_blue('\t  CTRL + C to quit inside Terminal')
+
         else:
             print_error('Error in trying to connect')
             sys.exit()
@@ -81,18 +85,11 @@ class Exibidor(Client):
             what_type, id_origin, id_destiny, seq_num = header
 
             if what_type == msg_type.OK:
-                # Toda as mensagens tem que ter um OK. O envio de uma mensagem de
-                # OK nao incrementa o numero de sequencia das mensagens do cliente (mensagens de OK nao tem
-                # numero de sequencia proprio
-                # self.handle_ok()
                 pass
             elif what_type == msg_type.ERRO:
-                # igual ao OK mas indicando que alguma coisa deu errado
-                # self.handle_erro()
                 pass
             elif what_type == msg_type.FLW:
-                # self.handle_flw()
-                pass
+                sys.exit(0)
             elif what_type == msg_type.MSG:
                 if id_destiny == self.id:
                     self.handle_msg(id_origin, seq_num)
@@ -123,5 +120,5 @@ def test():
     exibidor.start()
 
 if __name__ == "__main__":
-    # main(sys.argv)
-    test()
+    main(sys.argv)
+    # test()
