@@ -57,9 +57,11 @@ class Exibidor(Client):
 
     def start(self):
         # clear screen
-        print('\033c')
+        print('\033c', end="")
         if self.connect(0):
-            print_blue('Connected to remote host.')
+            print_blue('Connected to Server.')
+            print_blue('Welcome to Server Chat.')
+            print_blue('\t/list -- ids connected from server')
         else:
             print_error('Error in trying to connect')
             sys.exit()

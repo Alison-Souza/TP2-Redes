@@ -13,10 +13,6 @@ class Client:
     def get_id(self):
         return self.id
 
-    # TODO: Olhar se vou realmente usar isso
-    def set_id(self, number):
-        self.id = number
-
     def __del__(self):
         if self.sock._closed == False:
             data = (msg_type.FLW, self.id, SERVER_ID, 0)
@@ -27,37 +23,36 @@ class Client:
                     read_sockets, write_sockets, error_sockets = select.select([self.sock],[],[])
                     header, id_origin, id_destiny, dummy = self.receive_header()
                     if header == msg_type.OK and id_origin == SERVER_ID and id_destiny == self.id:
+                        print_blue('OK recebido, fechando conexão!')
                         break
                 except Exception as e:
                     print_error('Something wrong from receive FLW-OK')
                     raise
-                    break
-                    # continue
         self.sock.close()
         print_blue('Client died!')
 
+    # Faz uma requisição para conectar ao servidor
     def connect(self, request_id):
         print_warning('connect')
         try:
             self.sock.connect((self.host, self.port))
             self.sock.settimeout(5)
             self.send_data((msg_type.OI, request_id, SERVER_ID, 0))
-            # TODO: use select
-            # time.sleep(1)
             what_type, id_origin, id_destiny, dummy = self.receive_header()
         except Exception as e:
             print_error('Error in trying to connect server')
             raise
             return False
 
-        if what_type == msg_type.OK:
+        # Recebendo o OK, seta o identificador recebido
+        if what_type == msg_type.OK and id_destiny != SERVER_ID and id_destiny != 0:
             self.id = id_destiny
             print_warning('DONE connect')
             return True
         else:
-            return False
+            sys.exit(1)
 
-    # Constroi o cabecalho concatenado a mensagem em formato binario e envia pelo socket
+    # Constrói o cabeçalho concatenado a mensagem em formato binario e envia pelo socket
     def send_data(self, header, data=''):
         print_warning('send_data')
         print_bold(header)
@@ -83,17 +78,20 @@ class Client:
             return False
         return True
 
+    # Recebe uma quantidade size de bytes do servidor
     def receive_data(self, size):
         try:
             data = self.sock.recv(size)
             if not data :
                 print_error('\nDisconnected from chat server')
+                self.sock.close()
                 sys.exit()
         except:
             print_error('Error in receive data!')
             sys.exit()
         return data
 
+    # Extrai o cabeçalho do socket
     def receive_header(self):
         print_warning('receive_header')
         data = self.receive_data(Header.struct.size)

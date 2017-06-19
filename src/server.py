@@ -269,6 +269,7 @@ class Server:
             sys.exit()
         elif command[:-1] == '/list':
             # TODO: Melhorar isso
+            print_green('server.connections = ', end="")
             print_green(self.connections)
 
     # Recebe os dados do socket e repassa a responsabilidade pra outro metodo
@@ -351,14 +352,32 @@ class Server:
                     except:
                         raise
             else:
+                # First, get the instance of Emitter
+                the_choosen_one = None
                 for conn in self.connections:
-                    if conn.get_sock() == self.get_sock_by_id(id_destiny):
-                        try:
-                            if conn.get_id() == id_destiny:
-                                header = (msg_type.MSG, id_origin, id_destiny, seq_num)
-                                self.send_data(conn.get_sock(), header, data)
-                        except:
-                            raise
+                    if id_destiny == conn.get_id():
+                        the_choosen_one = conn.get_connection()
+                        break
+                if the_choosen_one is None:
+                    print_error('Cannot find the choosen one!')
+                    return
+                the_other_choosen_one = None
+                for conn in self.connections:
+                    if id_origin == conn.get_id():
+                        the_other_choosen_one = conn.get_connection()
+                        break
+                if the_other_choosen_one is None:
+                    print_error('Cannot find the choosen one!')
+                    return
+                # now let's find and send to Exhibitor
+                print(the_choosen_one, the_other_choosen_one)
+                try:
+                    header = (msg_type.MSG, id_origin, the_choosen_one, seq_num)
+                    self.send_data(self.get_sock_by_id(the_choosen_one), header, data)
+                    header = (msg_type.MSG, id_origin, the_other_choosen_one, seq_num)
+                    self.send_data(self.get_sock_by_id(the_other_choosen_one), header, data)
+                except:
+                    raise
         else:
             return
 
@@ -389,11 +408,15 @@ class Server:
                     except Exception as e:
                         print_error('Erro in trying to send data')
                         raise
-        else:
+        else: # SERVER_ID
+            id_printer = 0
             for conn in self.connections:
-                if conn.get_id() == id_destiny:
+                if conn.get_id() == id_origin:
                     id_printer = conn.get_connection()
                     break
+            if id_printer == 0:
+                print_error('No Exhibitor associate!')
+                return None
             header = [msg_type.CLIST, SERVER_ID, id_printer, 0]
             data = header + [how_many_conn]
             sock = None

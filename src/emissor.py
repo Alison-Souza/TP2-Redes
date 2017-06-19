@@ -20,23 +20,14 @@ class Emissor(Client):
     def receive_header(self):
         return super(Emissor, self).receive_header()
 
-'''
-
-'''
-
     def handle_ok(self, id_origin, seq_num):
         print_warning('Receive OK from: ' + str(id_origin))
         print_warning('Seq number: ' + str(seq_num))
         if seq_num == self.seq_num:
             self.seq_num += 1
 
-    def handle_msg(self, id_origin, seq_num):
-        pass
-
     def start(self):
-        if self.connect(self.exibidor_id):
-            # print_blue('Connected to remote host.')
-        else:
+        if not self.connect(self.exibidor_id):
             return False
 
         while True:
@@ -61,8 +52,7 @@ class Emissor(Client):
                         # self.handle_erro()
                         pass
                     elif what_type == msg_type.FLW:
-                        # self.handle_flw()
-                        pass
+                        self.handle_flw()
                     elif what_type == msg_type.MSG:
                         if id_destiny == self.id:
                             self.handle_msg(id_origin, seq_num)
@@ -76,10 +66,15 @@ class Emissor(Client):
 
                 elif sock == sys.stdin:
                     msg = sys.stdin.readline()
-                    if msg[:-1] == '/help':
-                        # TODO: Do a help message
-                        pass
-                    elif msg[:-1] == '/list':
+                    if msg[:-1] == '/list':
+                        # list only on private
+                        try:
+                            header = (msg_type.CREQ, self.id, SERVER_ID, 0)
+                            self.send_data(header)
+                        except Exception as e:
+                            raise
+                    elif msg[:-1] == '/listb':
+                        # list in broadcast
                         try:
                             header = (msg_type.CREQ, self.id, 0, 0)
                             self.send_data(header)
@@ -91,7 +86,15 @@ class Emissor(Client):
                     elif msg[:-1] == '/exit':
                         sys.exit()
                     else:
-                        self.send_data((msg_type.MSG, self.id, 0, self.seq_num), msg)
+                        if msg.find("/msg") == 0 and len(msg.split(" ")) > 2:
+                            id_to_send_private = int(msg.split(" ")[1])
+                            msg_complete = str()
+                            for x in msg.split(" ")[2:]:
+                                msg_complete += x
+                            self.send_data((msg_type.MSG, self.id, id_to_send_private, self.seq_num), msg_complete)
+                        else:
+                            # broadcast
+                            self.send_data((msg_type.MSG, self.id, 0, self.seq_num), msg)
 
 def main(args):
     if(len(args) < 3) :
