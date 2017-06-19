@@ -76,7 +76,27 @@ class Server:
 
     def __del__(self):
         print_blue('Sendind FLW to all clients!')
-        # TODO: Send FLW e espera o OK
+        for conn in self.connections:
+            sock = conn.sock
+            if not sock._closed:
+                id_to_close = self.get_id_by_sock(sock)
+                data = (msg_type.FLW, SERVER_ID, id_to_close, 0)
+                print_blue('FLW to ' + str(id_to_close) + '!')
+                self.send_data(sock, data)
+                get_out = True
+                while get_out:
+                    try:
+                        print_blue('Waiting for OK from FLW...')
+                        read_sockets, write_sockets, error_sockets = select.select([sock],[],[])
+                        header, id_origin, id_destiny, dummy = self.receive_header(sock)
+                        if header == msg_type.OK and id_origin == id_to_close and id_destiny == SERVER_ID:
+                            print_blue('OK recebido, fechando conexão!')
+                            get_out = False
+                    except Exception as e:
+                        print_error('Something wrong from receive FLW-OK')
+                        raise
+                sock.close()
+                # self.remove_sock(sock)
         self.server_socket.close()
 
     # Retorna o socket do cliente passando o id como parametro

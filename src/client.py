@@ -31,6 +31,18 @@ class Client:
         self.sock.close()
         print_blue('Client died!')
 
+    def handle_flw(self, id_origin, id_destiny):
+        if self.id != id_destiny:
+            return
+        print_blue('Receive FLW from ' + str(id_origin))
+        header = (msg_type.OK, self.id, SERVER_ID, 0)
+        try:
+            self.send_data(header)
+        except Exception as e:
+            raise
+        self.sock.close()
+        sys.exit(0)
+
     # Faz uma requisição para conectar ao servidor
     def connect(self, request_id):
         print_warning('connect')

@@ -89,6 +89,9 @@ class Exibidor(Client):
             elif what_type == msg_type.ERRO:
                 pass
             elif what_type == msg_type.FLW:
+                if self.id != id_destiny:
+                    continue
+                self.handle_flw(id_origin, id_destiny)
                 sys.exit(0)
             elif what_type == msg_type.MSG:
                 if id_destiny == self.id:

@@ -52,7 +52,7 @@ class Emissor(Client):
                         # self.handle_erro()
                         pass
                     elif what_type == msg_type.FLW:
-                        self.handle_flw()
+                        self.handle_flw(id_origin, id_destiny)
                     elif what_type == msg_type.MSG:
                         if id_destiny == self.id:
                             self.handle_msg(id_origin, seq_num)
